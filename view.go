@@ -1,0 +1,66 @@
+package main
+
+import (
+	"html/template"
+	"io"
+)
+
+const (
+	NEW_PASSWORD_TAG string = "new_password"
+	PASSWORDS_TAG           = "passwords"
+	LOGIN_TAG               = "login"
+	NEW_USER_TAG            = "new_user"
+)
+
+var GlobalView = struct {
+	LoginLoc              string
+	NewUserLoc            string
+	PasswordsLoc          string
+	NewPasswordLoc        string
+	ProcessFormLoc        string
+	NonceFormName         string
+	RequiresLoginFormName string
+	ActionFormName        string
+}{
+	LoginLoc:              LOGIN_RTE,
+	NewUserLoc:            NEW_USER_RTE,
+	PasswordsLoc:          PASSWORDS_RTE,
+	NewPasswordLoc:        NEW_PASSWORDS_RTE,
+	ProcessFormLoc:        PROCESS_FORM_RTE,
+	NonceFormName:         NONCE_FORM_NAME,
+	RequiresLoginFormName: REQ_LOGIN_FORM_NAME,
+	ActionFormName:        ACTION_FORM_NAME,
+}
+
+type View struct {
+	template *template.Template
+}
+
+type Viewer interface {
+	Render(io.Writer, interface{}) error
+}
+
+func NewView(location, tag string) (*View, error) {
+	v := new(View)
+	data, err := Asset(location)
+	if err != nil {
+		return nil, err
+	}
+	tmpl, err := template.New(tag).Parse(string(data))
+	if err != nil {
+		return nil, err
+	}
+	v.template = tmpl
+	return v, nil
+}
+
+func (v View) Render(w io.Writer, tData interface{}) error {
+	data := struct {
+		D interface{}
+		G interface{}
+	}{
+		tData,
+		GlobalView,
+	}
+	return v.template.Execute(w, data)
+}
