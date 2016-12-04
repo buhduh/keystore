@@ -36,7 +36,6 @@ func NewUserModel() *UserModel {
 	return new(UserModel)
 }
 
-//A silly helper, not really needed...
 func NewUser(n, pw, s, qr string) *User {
 	return &User{
 		Name:      n,
@@ -47,7 +46,8 @@ func NewUser(n, pw, s, qr string) *User {
 }
 
 func (u UserModel) AddUser(user *User) error {
-	if connection == nil {
+	err := safelyConnect()
+	if err != nil {
 		return fmt.Errorf("Database connection never established.")
 	}
 	stmt, err := connection.Prepare("insert users set name=?, password=?, salt=?, qr_secret=?")
@@ -86,8 +86,9 @@ func (u UserModel) CheckUserExists(err error) bool {
 
 //Mostly duped code for id and name...
 func (u UserModel) GetUserByID(id int64) (*User, error) {
-	if connection == nil {
-		return nil, fmt.Errorf("Database connection not established.")
+	err := safelyConnect()
+	if err != nil {
+		return nil, fmt.Errorf("Database connection never established.")
 	}
 	stmt, err := connection.Prepare(
 		"select id, name, password, salt, qr_secret from users where id=?")
@@ -117,8 +118,9 @@ func (u UserModel) GetUserByID(id int64) (*User, error) {
 }
 
 func (u UserModel) GetUserByName(name string) (*User, error) {
-	if connection == nil {
-		return nil, fmt.Errorf("Database connection not established.")
+	err := safelyConnect()
+	if err != nil {
+		return nil, fmt.Errorf("Database connection never established.")
 	}
 	stmt, err := connection.Prepare(
 		"select id, name, password, salt, qr_secret from users where name=?")

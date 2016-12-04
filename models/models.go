@@ -4,9 +4,12 @@ import (
 	"database/sql"
 	"github.com/go-sql-driver/mysql"
 	"log"
+	"sync"
 )
 
 var connection *sql.DB
+
+var dbLock *sync.Mutex = new(sync.Mutex)
 
 //TODO parameterize the dataSourceName
 //TODO logging...
@@ -16,6 +19,16 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func safelyConnect() error {
+	dbLock.Lock()
+	err := connection.Ping()
+	dbLock.Unlock()
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 //an internal helper, specifically dependent
