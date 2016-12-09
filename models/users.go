@@ -1,6 +1,3 @@
-/*
- TODO need to refactor to attemt to reconnect
-*/
 package models
 
 import (

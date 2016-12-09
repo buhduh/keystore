@@ -16,7 +16,27 @@ func getNewPasswordRoute() (*Route, error) {
 	}
 	var callback Action
 	callback = func(w http.ResponseWriter, r *http.Request) {
-		view.Render(w, nil)
+		categories := []struct {
+			Value    int
+			Selected string
+			Category string
+		}{
+			{1, "", "foo"}, {2, "selected", "bar"}, {3, "", "baz"},
+		}
+		data := struct {
+			Nonce      Nonce
+			UserName   string
+			Domain     string
+			Notes      string
+			Categories interface{}
+		}{
+			Nonce:      NewNonce(NONCE_LIFETIME),
+			UserName:   "dale",
+			Domain:     "www.foobar.com",
+			Notes:      "Some notes",
+			Categories: categories,
+		}
+		view.Render(w, data)
 	}
 	return NewRoute(callback, DefaultVerifier{true}), nil
 }
@@ -40,7 +60,12 @@ func getLoginRoute() (*Route, error) {
 	}
 	var callback Action
 	callback = func(w http.ResponseWriter, r *http.Request) {
-		view.Render(w, nil)
+		data := struct {
+			Nonce Nonce
+		}{
+			Nonce: NewNonce(NONCE_LIFETIME),
+		}
+		view.Render(w, data)
 	}
 	return NewRoute(callback, DefaultVerifier{}), nil
 }
@@ -55,14 +80,10 @@ func getNewUserRoute() (*Route, error) {
 		qr := NewQR()
 		data := struct {
 			Nonce       Nonce
-			SuccessLoc  string
-			FailureLoc  string
 			QRSecret    string
 			QRSecretB64 string
 		}{
 			Nonce:       NewNonce(NONCE_LIFETIME),
-			SuccessLoc:  LOGIN_RTE,
-			FailureLoc:  NEW_USER_RTE,
 			QRSecret:    qr.Secret,
 			QRSecretB64: b64.StdEncoding.EncodeToString(qr.URI),
 		}

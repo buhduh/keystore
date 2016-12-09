@@ -1,6 +1,35 @@
 <!DOCTYPE html>
 <html>
+  <style type="text/css">
+    ul {
+      list-style: none;
+    }
+    label {
+      display: inline-block;
+      width: 210px;
+      text-align: right;
+    }
+  </style>
   <h1>Login</h1>
   <h3><a href="{{.G.NewUserLoc}}">New</a></h3>
-  <h3><a href="{{.G.PasswordsLoc}}">Submit</a></h3>
+  <form method="POST" action="{{.G.ProcessFormLoc}}">
+    <input type="hidden" name="{{.G.NonceFormName}}" value="{{.D.Nonce}}" /> 
+    <input type="hidden" name="{{.G.RequiresLoginFormName}}" value="false" /> 
+    <input type="hidden" name="{{.G.ActionFormName}}" value="login" />
+    <ul>
+      <li>
+        <label for="name">Name: </label>
+        <input type="text" name="name" required/>
+      </li>
+      <li>
+        <label for="password">Password: </label>
+        <input type="text" name="password" required/>
+      </li>
+      <li>
+        <label for="Code">Code: </label>
+        <input type="text" name="code" required/>
+      </li>
+      <li><label></label><input type="submit" value="Submit"/></li>
+    </ul>
+  </form>
 </html>

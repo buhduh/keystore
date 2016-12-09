@@ -1,8 +1,11 @@
 package main
 
 import (
+	b32 "encoding/base32"
 	"fmt"
+	"github.com/balasanjay/totp"
 	"golang.org/x/crypto/bcrypt"
+	"keystore/session"
 	"net/http"
 )
 
@@ -26,9 +29,12 @@ func (d DefaultVerifier) IsSecure(r *http.Request) bool {
 	return d.secure
 }
 
-//TODO cookies and shit
 func (d DefaultVerifier) IsLoggedIn(r *http.Request) bool {
-	return true
+	sess, err := session.NewSession(r.Cookies(), session.DEFAULT_SESSION_AGE)
+	if err != nil || sess == nil {
+		return false
+	}
+	return sess.Get("logged_in") == "true"
 }
 
 type FormVerifier struct{}
@@ -64,15 +70,34 @@ func (f FormVerifier) IsLoggedIn(r *http.Request) bool {
 	if action == "" {
 		return false
 	}
-	//TODO cookies and shit
-	return false
+	sess, err := session.NewSession(r.Cookies(), session.DEFAULT_SESSION_AGE)
+	if err != nil || sess == nil {
+		return false
+	}
+	return sess.Get("logged_in") == "true"
+}
+
+func scramble(salt, pw string) []byte {
+	return []byte(fmt.Sprintf("%s%s%s%s", salt, pw, pw, salt))
 }
 
 func GetPassord(salt, pw string) (string, error) {
-	p, err := bcrypt.GenerateFromPassword(
-		[]byte(fmt.Sprintf("%s%s%s%s", salt, pw, pw, salt)), BCRYPT_COST)
+	p, err := bcrypt.GenerateFromPassword(scramble(salt, pw), BCRYPT_COST)
 	if err != nil {
 		return "", err
 	}
 	return string(p), nil
+}
+
+func ComparePassword(salt, pw, hashed string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(hashed), scramble(salt, pw))
+	return err == nil
+}
+
+func VerifyCode(secret, code string) bool {
+	bSecret, err := b32.StdEncoding.DecodeString(secret)
+	if err != nil {
+		return false
+	}
+	return totp.Authenticate(bSecret, code, nil)
 }

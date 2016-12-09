@@ -9,6 +9,7 @@ import (
 	b64 "encoding/base64"
 	"fmt"
 	"keystore/models"
+	"keystore/session"
 	"net/http"
 	"net/url"
 	"strings"
@@ -29,11 +30,55 @@ func getProcessFormRoute() (*Route, error) {
 		switch action := r.FormValue(ACTION_FORM_NAME); action {
 		case "new_user":
 			doNewUser(w, r, models.NewUserModel())
+		case "login":
+			sess, err := session.NewSession(r.Cookies(), session.DEFAULT_SESSION_AGE)
+			if err != nil {
+				http.Error(w, "Action not taken, unable to complete.", 501)
+			}
+			doLogin(w, r, models.NewUserModel(), sess)
 		default:
 			http.Error(w, "Action not taken, unable to complete.", 501)
 		}
 	}
 	return NewRoute(callback, FormVerifier{}), nil
+}
+
+func doLogin(
+	w http.ResponseWriter, r *http.Request,
+	u models.IUserModel, session session.ISession) {
+	var name, tPassword, code string
+	errors := make([]string, 0)
+	if name = r.FormValue("name"); name == "" {
+		errors = append(errors, "Name is required.")
+	}
+	if tPassword = r.FormValue("password"); tPassword == "" {
+		errors = append(errors, "Password is required.")
+	}
+	if code = r.FormValue("code"); code == "" {
+		errors = append(errors, "Code is required.")
+	}
+	if len(errors) > 0 {
+		msg := url.QueryEscape(strings.Join(errors, "|"))
+		http.Redirect(w, r, fmt.Sprintf("%s?error=%s", LOGIN_RTE, msg), 303)
+		return
+	}
+	user, err := u.GetUserByName(name)
+	eMsg := url.QueryEscape("Could not find record for name, password, or code.")
+	if user == nil || err != nil {
+		http.Redirect(w, r, fmt.Sprintf("%s?error=%s", LOGIN_RTE, eMsg), 303)
+		return
+	}
+	if !ComparePassword(user.Salt, tPassword, user.Password) {
+		http.Redirect(w, r, fmt.Sprintf("%s?error=%s", LOGIN_RTE, eMsg), 303)
+		return
+	}
+	if verified := VerifyCode(user.QR_Secret, code); !verified {
+		http.Redirect(w, r, fmt.Sprintf("%s?error=%s", LOGIN_RTE, eMsg), 303)
+		return
+	}
+	session.Set("logged_in", "true")
+	http.SetCookie(w, session.GetCookie())
+	http.Redirect(w, r, PASSWORDS_RTE, 302)
 }
 
 func doNewUser(w http.ResponseWriter, r *http.Request, u models.IUserModel) {
