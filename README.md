@@ -17,7 +17,7 @@ Installation:
 4.  Install mysql and make an empty database called "keystore" on the root account
 with no password.  $cd database && mysql -u root keystore < create_database.sql
 5.  Install go-bindata from https://github.com/jteeuwen/go-bindata
-6.  run build.go
+6.  run build.go(Assumes $GOPATH/bin is in your path, $export PATH=$PATH:$GOPATH/bin
 
 If everything is set up, the keystore can be navigated to by going to http://localhost:8080 in the browser
 
