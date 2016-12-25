@@ -12,7 +12,10 @@ import (
 	"keystore/session"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -25,17 +28,30 @@ const (
 	ACTION_FORM_NAME    = "action"
 )
 
-func getProcessFormRoute() (*Route, error) {
+//TODO write a black box integration test
+func getProcessFormRoute(
+	uModel models.IUserModel, cModel models.ICategoryModel, pModel models.IPasswordModel,
+) (*Route, error) {
 	var callback = func(w http.ResponseWriter, r *http.Request) {
 		switch action := r.FormValue(ACTION_FORM_NAME); action {
 		case "new_user":
-			doNewUser(w, r, models.NewUserModel())
+			doNewUser(w, r, uModel)
+			return
 		case "login":
 			sess, err := session.NewSession(r.Cookies(), session.DEFAULT_SESSION_AGE)
 			if err != nil {
 				http.Error(w, "Action not taken, unable to complete.", 501)
 			}
-			doLogin(w, r, models.NewUserModel(), sess)
+			doLogin(w, r, uModel, sess)
+			return
+		case "new_password":
+			//Also does the update passward
+			sess, err := session.NewSession(r.Cookies(), session.DEFAULT_SESSION_AGE)
+			if err != nil {
+				http.Error(w, "Action not taken, unable to complete.", 501)
+			}
+			doNewPassword(w, r, sess, cModel, pModel, uModel)
+			return
 		default:
 			http.Error(w, "Action not taken, unable to complete.", 501)
 		}
@@ -43,6 +59,105 @@ func getProcessFormRoute() (*Route, error) {
 	return NewRoute(callback, FormVerifier{}), nil
 }
 
+func doNewPassword(
+	w http.ResponseWriter, r *http.Request, session session.ISession,
+	cModel models.ICategoryModel, pModel models.IPasswordModel,
+	uModel models.IUserModel) {
+	uIDStr := session.Get("user_id")
+	if uIDStr == "" {
+		http.Error(w, "Action not taken, unable to complete.", 501)
+		return
+	}
+	uID, err := strconv.ParseInt(uIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Action not taken, unable to complete.", 501)
+		return
+	}
+	errors := make([]string, 0)
+	pw := r.FormValue("password")
+	if pw == "" {
+		errors = append(errors, "password is required")
+	}
+	uName := strings.TrimSpace(r.FormValue("user_name"))
+	domain := strings.TrimSpace(r.FormValue("domain"))
+	notes := strings.TrimSpace(r.FormValue("notes"))
+	expStr := strings.TrimSpace(r.FormValue("expires"))
+	//90 days in hours
+	durr, _ := time.ParseDuration(fmt.Sprintf("%dh", 24*90))
+	//Local time, not going to fuss with differences between server and browser
+	//time zone differences
+	expires := time.Now().Add(durr)
+	if expStr != "" {
+		expires, err = time.Parse("2006-01-02", expStr)
+		if err != nil {
+			errors = append(errors, "unable to parse expires string")
+		}
+	}
+	//TODO all this category stuff may be better in its own func
+	catIDStr := r.FormValue("category")
+	catID, err := strconv.ParseInt(catIDStr, 10, 64)
+	if err != nil {
+		errors = append(errors, "unable to parse chosen category")
+	}
+	if catID == 0 {
+		catStr := strings.TrimSpace(r.FormValue("new_category"))
+		var cat *models.Category
+		if catStr == "" {
+			errors = append(errors, "unable to parse chosen category")
+			goto categoryDone
+		}
+		cat = &models.Category{Name: catStr, UserID: uID}
+		err = cModel.AddCategory(cat)
+		if err != nil {
+			if cModel.CheckCategoryExists(err) {
+				errors = append(errors, "category already exists")
+				goto categoryDone
+			}
+			errors = append(errors, "unable to parse chosen category")
+			goto categoryDone
+		}
+		if cat.ID == 0 {
+			errors = append(errors, "unable to parse chosen category")
+			goto categoryDone
+		}
+		catID = cat.ID
+	}
+categoryDone:
+	if len(errors) > 0 {
+		msg := url.QueryEscape(strings.Join(errors, "|"))
+		http.Redirect(w, r, fmt.Sprintf("%s?error=%s", NEW_PASSWORDS_RTE, msg), 303)
+		return
+	}
+	user, err := uModel.GetUserByID(uID)
+	if err != nil {
+		http.Error(w, "Action not taken, unable to complete.", 501)
+		return
+	}
+	encPass, err := TwoWayEncryptPassword(user.Salt, os.Getenv(KEY_ENV), pw)
+	if err != nil {
+		http.Error(w, "Action not taken, unable to complete.", 501)
+		return
+	}
+	pass := &models.Password{
+		Password:   encPass,
+		UserName:   uName,
+		Notes:      notes,
+		Domain:     domain,
+		Expires:    expires.UTC(),
+		RuleSet:    "",
+		UserID:     uID,
+		CategoryID: catID,
+	}
+	err = pModel.AddPassword(pass)
+	if err != nil {
+		http.Error(w, "Action not taken, unable to complete.", 501)
+		return
+	}
+	//We're good! redirect to passwords
+	http.Redirect(w, r, PASSWORDS_RTE, 302)
+}
+
+//TODO I should probably test this
 func doLogin(
 	w http.ResponseWriter, r *http.Request,
 	u models.IUserModel, session session.ISession) {
@@ -77,6 +192,7 @@ func doLogin(
 		return
 	}
 	session.Set("logged_in", "true")
+	session.Set("user_id", strconv.FormatInt(user.ID, 10))
 	http.SetCookie(w, session.GetCookie())
 	http.Redirect(w, r, PASSWORDS_RTE, 302)
 }

@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
 go-bindata data/
 go install
-keystore
+keystore --assets $DIR/assets

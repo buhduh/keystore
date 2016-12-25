@@ -11,25 +11,6 @@ import (
 	"testing"
 )
 
-/*
-func newBody(content map[string]string) *strings.Reader {
-	form := url.Values{}
-	for k, v := range content {
-		form.Add(k, v)
-	}
-	fmt.Printf("form: '%s'\n", form.Encode())
-	return strings.NewReader(form.Encode())
-}
-
-func newBody(content map[string]string) *bufio.Reader {
-	form := url.Values{}
-	for k, v := range content {
-		form.Add(k, v)
-	}
-	return bufio.NewReader(strings.NewReader(form.Encode()))
-}
-*/
-
 func newBody(content map[string]string) url.Values {
 	form := url.Values{}
 	for k, v := range content {
@@ -67,7 +48,11 @@ func (n dummyModel) CheckUserExists(err error) bool {
 	return n.exists
 }
 
-func TestDoNewUser(t *testing.T) {
+func TestProcess(t *testing.T) {
+	t.Run("newUser", tDoNewUser)
+}
+
+func tDoNewUser(t *testing.T) {
 	data := []struct {
 		data  map[string]string
 		code  int

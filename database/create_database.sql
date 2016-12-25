@@ -26,7 +26,7 @@ create table categories (
 create table passwords (
   id mediumint not null auto_increment,
   password varchar(256) not null,
-  user_name varchar(256) not null,
+  user_name varchar(256),
   notes text,
   domain varchar(256),
   expires date,

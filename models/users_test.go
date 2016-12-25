@@ -1,44 +1,8 @@
 package models
 
 import (
-	"fmt"
-	"io/ioutil"
-	"os"
-	"os/exec"
-	"strings"
 	"testing"
 )
-
-func getSQLTestsDir() (string, error) {
-	temp, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	return temp + "/sql_tests", nil
-}
-
-func callSQL(scriptName string) error {
-	path, err := getSQLTestsDir()
-	if err != nil {
-		return err
-	}
-	cStr := fmt.Sprintf("%s/%s", path, scriptName)
-	if _, err := os.Stat(cStr); os.IsNotExist(err) {
-		return err
-	}
-	//TODO, this fails for different users/database names...
-	cmd := exec.Command("mysql", "-u", "root", "keystore")
-	in, err := ioutil.ReadFile(cStr)
-	if err != nil {
-		return err
-	}
-	cmd.Stdin = strings.NewReader(string(in))
-	err = cmd.Run()
-	if err != nil {
-		return err
-	}
-	return nil
-}
 
 func TestAddUser(t *testing.T) {
 	err := callSQL("prepare_add_user_test.sql")

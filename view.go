@@ -21,6 +21,9 @@ var GlobalView = struct {
 	NonceFormName         string
 	RequiresLoginFormName string
 	ActionFormName        string
+	EditImg               string
+	CopyImg               string
+	DeleteImg             string
 }{
 	LoginLoc:              LOGIN_RTE,
 	NewUserLoc:            NEW_USER_RTE,
@@ -30,6 +33,9 @@ var GlobalView = struct {
 	NonceFormName:         NONCE_FORM_NAME,
 	RequiresLoginFormName: REQ_LOGIN_FORM_NAME,
 	ActionFormName:        ACTION_FORM_NAME,
+	EditImg:               ASSETS_RTE + "images/edit.png",
+	CopyImg:               ASSETS_RTE + "images/copy.png",
+	DeleteImg:             ASSETS_RTE + "images/delete.png",
 }
 
 type View struct {

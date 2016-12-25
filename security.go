@@ -1,10 +1,16 @@
 package main
 
 import (
+	"crypto/aes"
+	"crypto/cipher"
+	"crypto/rand"
+	"crypto/sha256"
 	b32 "encoding/base32"
+	b64 "encoding/base64"
 	"fmt"
 	"github.com/balasanjay/totp"
 	"golang.org/x/crypto/bcrypt"
+	"io"
 	"keystore/session"
 	"net/http"
 )
@@ -100,4 +106,52 @@ func VerifyCode(secret, code string) bool {
 		return false
 	}
 	return totp.Authenticate(bSecret, code, nil)
+}
+
+func generateKey(salt, key string) []byte {
+	temp := sha256.Sum256([]byte(salt + key + key + salt))
+	return temp[:]
+}
+
+//returns base 64 encoded encrypted pw
+func TwoWayEncryptPassword(salt, key, pw string) (string, error) {
+	block, err := aes.NewCipher(generateKey(salt, key))
+	if err != nil {
+		return "", err
+	}
+	b := b64.StdEncoding.EncodeToString([]byte(pw))
+	cipherText := make([]byte, aes.BlockSize+len(b))
+	iv := cipherText[:aes.BlockSize]
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		return "", err
+	}
+	cfb := cipher.NewCFBEncrypter(block, iv)
+	cfb.XORKeyStream(cipherText[aes.BlockSize:], []byte(b))
+	data := b64.StdEncoding.EncodeToString(cipherText)
+	return data, nil
+}
+
+//takes base 64 encoded encrypted pw
+func TwoWayDecryptPassword(salt, key, tPW string) (string, error) {
+	block, err := aes.NewCipher(generateKey(salt, key))
+	if err != nil {
+		return "", err
+	}
+	//text := []byte(pw)
+	text, err := b64.StdEncoding.DecodeString(tPW)
+	if err != nil {
+		return "", err
+	}
+	if len(text) < aes.BlockSize {
+		return "", fmt.Errorf("ciphertext too short")
+	}
+	iv := text[:aes.BlockSize]
+	text = text[aes.BlockSize:]
+	cfb := cipher.NewCFBDecrypter(block, iv)
+	cfb.XORKeyStream(text, text)
+	data, err := b64.StdEncoding.DecodeString(string(text))
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

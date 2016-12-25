@@ -10,6 +10,7 @@ const (
 	PASSWORDS_RTE            = "/passwords"
 	NEW_PASSWORDS_RTE        = PASSWORDS_RTE + "/new"
 	PROCESS_FORM_RTE         = "/process"
+	ASSETS_RTE               = "/assets/"
 )
 
 type Action func(http.ResponseWriter, *http.Request)
@@ -25,6 +26,10 @@ type Route struct {
 //I don't think this is right.  This should redirect with code 3xx
 //to login with code 403
 func (ro Route) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if ro.verifier == nil {
+		ro.callback(w, r)
+		return
+	}
 	if ro.verifier.IsSecure(r) && !ro.verifier.IsLoggedIn(r) {
 		http.Redirect(w, r, LOGIN_RTE, 403)
 		return
