@@ -18,13 +18,14 @@ func twoWay(t *testing.T) {
 		{"How about some more with &^^^^^^^*()*&%*$$)((&(&//\\"},
 		{`How about some raw strings?*&^(%asdf cadsf*(&^(2345)(&*%$&\\\asdf\`},
 	}
+	enc := &TwoWayDecrypt{key: key}
 	for _, p := range phrases {
-		encrypted, err := TwoWayEncryptPassword(salt, key, p.phrase)
+		encrypted, err := enc.EncryptPassword(salt, p.phrase)
 		if err != nil {
 			t.Logf("Should not error, got '%s'.", err)
 			t.Fail()
 		}
-		decrypted, err := TwoWayDecryptPassword(salt, key, encrypted)
+		decrypted, err := enc.DecryptPassword(salt, encrypted)
 		if err != nil {
 			t.Logf("Should not error, got '%s'.", err)
 			t.Fail()

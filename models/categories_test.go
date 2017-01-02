@@ -1,23 +1,102 @@
+//TODO have to rewrite this with the fancy new var passing
 package models
 
 import (
 	"testing"
 )
 
-//Assumes GetUserByName works
-func TestGetCategoriesForUserID(t *testing.T) {
-	err := callSQL("prepare_get_categories_for_user_id_test.sql")
+func TestCategories(t *testing.T) {
+	err := callSQLVars("prepare_categories_test.sql", varMap, false)
+	if err != nil {
+		t.Logf("This can't fail, got error '%s'.", err)
+		t.Fail()
+	}
+	defer func() {
+		err = callSQLVars("clean_categories_test.sql", varMap, false)
+		if err != nil {
+			msg := "Warning, this shouldn't fail, got error '%s'. " +
+				"You should manually inspect the database, " +
+				"this script attempts to reset database to original state."
+			t.Logf(msg, err)
+			t.Fail()
+		}
+	}()
+	t.Run("userID", getCatsForUID)
+	t.Run("addCat", addCat)
+	t.Run("getCat", getCat)
+}
+
+func getCat(t *testing.T) {
+	err := safelyConnect()
 	if err != nil {
 		t.Logf("This cannot fail, got error '%s'.", err)
 		t.FailNow()
 	}
-	defer callSQL("clean_get_categories_for_user_id_test.sql")
-	user, err := NewUserModel().GetUserByName("foo")
+	row := connection.QueryRow(`
+    select
+      u.id, c.id, c.name, c.user_id from users u
+      join categories c on u.id=c.user_id
+    where
+      u.name=? and c.name=?
+  `, varMap["userName"], varMap["catFoo"])
+	var uID, cID, cUID int64
+	var cName string
+	row.Scan(&uID, &cID, &cName, &cUID)
 	if err != nil {
 		t.Logf("This cannot fail, got error '%s'.", err)
 		t.FailNow()
 	}
-	cats, err := NewCategoryModel().GetCategoriesForUserID(user.ID)
+	cModel := NewCategoryModel()
+	cat, err := cModel.GetCategoryByID(cID)
+	if err != nil {
+		t.Logf("Should not have failed, got error '%s'.", err)
+		t.Fail()
+	}
+	if cat == nil {
+		t.Logf("cat should not be nil.")
+		t.FailNow()
+	}
+	if cat.ID != cID {
+		t.Logf("Expected %d, got %d.", cID, cat.ID)
+		t.Fail()
+	}
+	if cat.Name != cName {
+		t.Logf("Expected '%s', got '%s'.", cName, cat.Name)
+		t.Fail()
+	}
+	if cat.UserID != uID {
+		t.Logf("Expected %d, got %d.", uID, cat.UserID)
+		t.Fail()
+	}
+	cat, err = cModel.GetCategoryByID(0)
+	if err != nil {
+		t.Logf("Should not have failed, got error '%s'.", err)
+		t.Fail()
+	}
+	if cat != nil {
+		t.Logf("cat should be nil.")
+		t.Fail()
+	}
+}
+
+//this test might fail if there's more than one
+//user with the same name, userName
+func getCatsForUID(t *testing.T) {
+	err := safelyConnect()
+	if err != nil {
+		t.Logf("This cannot fail, got error '%s'.", err)
+		t.FailNow()
+	}
+	row := connection.QueryRow(`
+    select id from users where name=?
+  `, varMap["userName"])
+	var uID int64
+	err = row.Scan(&uID)
+	if err != nil {
+		t.Logf("This cannot fail, got error '%s'.", err)
+		t.FailNow()
+	}
+	cats, err := NewCategoryModel().GetCategoriesForUserID(uID)
 	if err != nil {
 		t.Logf("This shouldn't fail, got error '%s'.", err)
 		t.Fail()
@@ -27,44 +106,52 @@ func TestGetCategoriesForUserID(t *testing.T) {
 		t.FailNow()
 	}
 	expected := map[string]bool{
-		"category_foo": true, "category_bar": true, "category_baz": true}
+		varMap["catFoo"]: true,
+		varMap["catBar"]: true,
+		varMap["catBaz"]: true,
+	}
 	for _, c := range cats {
 		if _, ok := expected[c.Name]; !ok {
 			t.Logf("Could not find expected category.")
 			t.Fail()
 		}
-		if c.UserID != user.ID {
-			t.Logf("Expected %d, got %d.", user.ID, c.UserID)
+		if c.UserID != uID {
+			t.Logf("Expected %d, got %d.", uID, c.UserID)
 			t.Fail()
 		}
 	}
 }
 
-//Assumes AddUser works
 //TODO this should probably be refactored into the test []struct{} paradigm
-func TestAddCategoryForUserID(t *testing.T) {
-	fooCatName := "foo_category"
-	barCatName := "bar_category"
-	uModel := NewUserModel()
-	cModel := NewCategoryModel()
-	user := NewUser("foo", "foo", "foo", "foo")
-	err := uModel.AddUser(user)
+func addCat(t *testing.T) {
+	var fooCatName string = "addCatCatNameFoo"
+	var barCatName string = "addCatCatNameBar"
+	err := safelyConnect()
 	if err != nil {
 		t.Logf("This cannot fail, got error '%s'.", err)
 		t.FailNow()
 	}
-	defer callSQL("clean_add_category_for_user_id.sql")
-	cat := &Category{Name: fooCatName, UserID: user.ID}
-	err = cModel.AddCategory(cat)
+	row := connection.QueryRow(`
+    select id from users where name=?
+  `, varMap["addCatUserName"])
+	var uID int64
+	err = row.Scan(&uID)
+	if err != nil {
+		t.Logf("This cannot fail, got error '%s'.", err)
+		t.FailNow()
+	}
+	cModel := NewCategoryModel()
+	catFoo := NewCategory(0, uID, fooCatName)
+	err = cModel.AddCategory(catFoo)
 	if err != nil {
 		t.Logf("This shouldn't fail, got error '%s'.", err)
 		t.Fail()
 	}
-	if cat.ID <= 0 {
-		t.Logf("Insert ID should be greater than 0, got %d", cat.ID)
+	if catFoo.ID <= 0 {
+		t.Logf("Insert ID should be greater than 0, got %d", catFoo.ID)
 		t.Fail()
 	}
-	cat = &Category{Name: fooCatName, UserID: user.ID}
+	cat := NewCategory(0, uID, fooCatName)
 	err = cModel.AddCategory(cat)
 	if !cModel.CheckCategoryExists(err) {
 		t.Logf("Should have gotten a UserExistsError.")
@@ -73,14 +160,18 @@ func TestAddCategoryForUserID(t *testing.T) {
 		}
 		t.Fail()
 	}
-	cat = &Category{Name: barCatName, UserID: user.ID}
-	err = cModel.AddCategory(cat)
+	catBar := NewCategory(0, uID, barCatName)
+	err = cModel.AddCategory(catBar)
 	if err != nil {
 		t.Logf("This shouldn't fail, got error '%s'.", err)
 		t.Fail()
 	}
-	if cat.ID <= 0 {
-		t.Logf("Insert ID should be greater than 0, got %d", cat.ID)
+	if catBar.ID <= 0 {
+		t.Logf("Insert ID should be greater than 0, got %d", catBar.ID)
+		t.Fail()
+	}
+	if catBar.ID == catFoo.ID {
+		t.Logf("Category ids should not be the same.")
 		t.Fail()
 	}
 }

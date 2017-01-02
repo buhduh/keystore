@@ -6,17 +6,17 @@ import (
 )
 
 const (
-	NEW_PASSWORD_TAG string = "new_password"
-	PASSWORDS_TAG           = "passwords"
-	LOGIN_TAG               = "login"
-	NEW_USER_TAG            = "new_user"
+	EDIT_PASSWORD_TAG string = "edit_password"
+	PASSWORDS_TAG            = "passwords"
+	LOGIN_TAG                = "login"
+	NEW_USER_TAG             = "new_user"
 )
 
 var GlobalView = struct {
 	LoginLoc              string
 	NewUserLoc            string
 	PasswordsLoc          string
-	NewPasswordLoc        string
+	EditPasswordLoc       string
 	ProcessFormLoc        string
 	NonceFormName         string
 	RequiresLoginFormName string
@@ -28,7 +28,7 @@ var GlobalView = struct {
 	LoginLoc:              LOGIN_RTE,
 	NewUserLoc:            NEW_USER_RTE,
 	PasswordsLoc:          PASSWORDS_RTE,
-	NewPasswordLoc:        NEW_PASSWORDS_RTE,
+	EditPasswordLoc:       EDIT_PASSWORD_RTE,
 	ProcessFormLoc:        PROCESS_FORM_RTE,
 	NonceFormName:         NONCE_FORM_NAME,
 	RequiresLoginFormName: REQ_LOGIN_FORM_NAME,

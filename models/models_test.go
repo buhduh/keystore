@@ -8,6 +8,26 @@ import (
 	"strings"
 )
 
+var varMap map[string]string = map[string]string{
+	"userName":       "userName",
+	"catFoo":         "catFoo",
+	"catBar":         "catBar",
+	"catBaz":         "catBaz",
+	"userFoo":        "userFoo",
+	"passFoo":        "passFoo",
+	"passBar":        "passBar",
+	"userUpdate":     "userUpdate",
+	"passUpdate":     "passUpdate",
+	"notesUpdate":    "notesUpdate",
+	"domainUpdate":   "domainUpdate",
+	"expiresUpdate":  "2016-01-02",
+	"rulesUpdate":    "rulesUpdate",
+	"oldCatUpdate":   "oldCatUpdate",
+	"newCatUpdate":   "newCatUpdate",
+	"nameUpdate":     "nameUpdate",
+	"addCatUserName": "addCatUserName",
+}
+
 func getSQLTestsDir() (string, error) {
 	temp, err := os.Getwd()
 	if err != nil {
@@ -42,7 +62,7 @@ func callSQL(scriptName string) error {
 
 //vars are only strings, if other types are required
 //cast in the sql script
-func callSQLVars(scriptName string, vars map[string]string) error {
+func callSQLVars(scriptName string, vars map[string]string, debug bool) error {
 	path, err := getSQLTestsDir()
 	if err != nil {
 		return err
@@ -64,6 +84,9 @@ func callSQLVars(scriptName string, vars map[string]string) error {
 	//TODO, this fails for different users/database names...
 	comStr := fmt.Sprintf(comFmt, varStr, srcStr)
 	cmd := exec.Command("mysql", "-u", "root", "keystore", "-e", comStr)
+	if debug {
+		println(comStr)
+	}
 	err = cmd.Run()
 	if err != nil {
 		return err

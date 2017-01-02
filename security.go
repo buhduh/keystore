@@ -27,6 +27,19 @@ type Verifier interface {
 	IsLoggedIn(*http.Request) bool
 }
 
+type TwoWayDecryptor interface {
+	EncryptPassword(string, string) (string, error)
+	DecryptPassword(string, string) (string, error)
+}
+
+type TwoWayDecrypt struct {
+	key string
+}
+
+func NewTwoWay(key string) *TwoWayDecrypt {
+	return &TwoWayDecrypt{key: key}
+}
+
 type DefaultVerifier struct {
 	secure bool
 }
@@ -114,8 +127,8 @@ func generateKey(salt, key string) []byte {
 }
 
 //returns base 64 encoded encrypted pw
-func TwoWayEncryptPassword(salt, key, pw string) (string, error) {
-	block, err := aes.NewCipher(generateKey(salt, key))
+func (t TwoWayDecrypt) EncryptPassword(salt, pw string) (string, error) {
+	block, err := aes.NewCipher(generateKey(salt, t.key))
 	if err != nil {
 		return "", err
 	}
@@ -132,8 +145,8 @@ func TwoWayEncryptPassword(salt, key, pw string) (string, error) {
 }
 
 //takes base 64 encoded encrypted pw
-func TwoWayDecryptPassword(salt, key, tPW string) (string, error) {
-	block, err := aes.NewCipher(generateKey(salt, key))
+func (t TwoWayDecrypt) DecryptPassword(salt, tPW string) (string, error) {
+	block, err := aes.NewCipher(generateKey(salt, t.key))
 	if err != nil {
 		return "", err
 	}

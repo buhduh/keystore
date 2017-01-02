@@ -11,21 +11,23 @@ import (
 	"keystore/session"
 	"log"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 )
 
-const (
-	KEY_ENV string = "ENC_KEY"
-)
+func getNewPasswordRoute(
+	uModel models.IUserModel, cModel models.ICategoryModel,
+	pModel models.IPasswordModel, decryptor TwoWayDecryptor) (*Route, error) {
+	return nil, nil
+}
 
 //TODO dependency inject session
-//TODO this will double as the update password callback too
-//will have to modify for that scenario, for now
-//just do the new password
-func getNewPasswordRoute() (*Route, error) {
-	view, err := NewView("data/new_password.html", NEW_PASSWORD_TAG)
+//TODO
+/*
+func getNewPasswordRoute(
+	uModel models.IUserModel, cModel models.ICategoryModel,
+	pModel models.IPasswordModel, decryptor TwoWayDecryptor) (*Route, error) {
+	view, err := NewView("data/edit_password.html", EDIT_PASSWORD_TAG)
 	if err != nil {
 		return nil, err
 	}
@@ -37,8 +39,12 @@ func getNewPasswordRoute() (*Route, error) {
 			http.Error(w, "Oops, something broke.", 500)
 			return
 		}
-		cModel := models.NewCategoryModel()
 		uID, err := strconv.ParseInt(session.Get("user_id"), 10, 64)
+		if err != nil {
+			http.Error(w, "Oops, something broke.", 500)
+			return
+		}
+		user, err := uModel.GetUserByID(uID)
 		if err != nil {
 			http.Error(w, "Oops, something broke.", 500)
 			return
@@ -48,40 +54,70 @@ func getNewPasswordRoute() (*Route, error) {
 			http.Error(w, "Oops, something broke.", 500)
 			return
 		}
+		var pw, userName, domain, notes, catName, expires string
+		pwIDStr := r.FormValue("id")
+		pwID, err := strconv.ParseInt(pwIDStr, 10, 64)
+		if err != nil || pwID != 0 {
+			pass, err := pModel.GetPasswordByID(pwID)
+			if err != nil {
+				goto donePassword
+			}
+			pw, err = decryptor.DecryptPassword(
+				user.Salt, os.Getenv(KEY_ENV), pass.Password)
+			if err != nil {
+				goto donePassword
+			}
+			userName = pass.UserName
+			domain = pass.Domain
+			notes = pass.Notes
+			catName = pass.CategoryName
+			expires = pass.Expires.Format(models.DATE_FMT)
+		}
+	donePassword:
 		categories := []struct {
 			Value    int64
 			Selected string
 			Category string
 		}{}
-		//TODO the 'selected' field for updating passwords
 		for _, c := range cats {
+			sel := ""
+			if c.Name == catName {
+				sel = "selected"
+			}
 			tmp := struct {
 				Value    int64
 				Selected string
 				Category string
-			}{c.ID, "", c.Name}
+			}{
+				c.ID, sel, c.Name,
+			}
 			categories = append(categories, tmp)
 		}
 		data := struct {
 			Nonce      Nonce
+			Password   string
 			UserName   string
 			Domain     string
 			Notes      string
+			Expires    string
 			Categories interface{}
 		}{
 			Nonce:      NewNonce(NONCE_LIFETIME),
-			UserName:   "",
-			Domain:     "",
-			Notes:      "",
+			Password:   pw,
+			UserName:   userName,
+			Domain:     domain,
+			Notes:      notes,
+			Expires:    expires,
 			Categories: categories,
 		}
 		view.Render(w, data)
 	}
 	return NewRoute(callback, DefaultVerifier{true}), nil
 }
+*/
 
 func getPasswordsRoute(
-	pModel models.IPasswordModel, cModel models.ICategoryModel) (*Route, error) {
+	cModel models.ICategoryModel, pModel models.IPasswordModel) (*Route, error) {
 	view, err := NewView("data/passwords.html", PASSWORDS_TAG)
 	if err != nil {
 		return nil, err
@@ -115,7 +151,14 @@ func getPasswordsRoute(
 			}
 			DisplayMap[p.CategoryName] = append(DisplayMap[p.CategoryName], p)
 		}
-		view.Render(w, DisplayMap)
+		data := struct {
+			DisplayMap map[string][]*models.Password
+			JS         string
+		}{
+			DisplayMap: DisplayMap,
+			JS:         ASSETS_RTE + "js/passwords.js",
+		}
+		view.Render(w, data)
 	}
 	return NewRoute(callback, DefaultVerifier{true}), nil
 }
@@ -185,17 +228,19 @@ func main() {
 		"The location of the assets directory.",
 	)
 	flag.Parse()
-	os.Setenv(KEY_ENV, *key)
+	uModel := models.NewUserModel()
+	cModel := models.NewCategoryModel()
+	pModel := models.NewPasswordModel()
+	decryptor := NewTwoWay(*key)
 	login, err := getLoginRoute()
 	if err != nil {
 		log.Fatal(err)
 	}
-	password, err := getPasswordsRoute(
-		models.NewPasswordModel(), models.NewCategoryModel())
+	password, err := getPasswordsRoute(cModel, pModel)
 	if err != nil {
 		log.Fatal(err)
 	}
-	newPassword, err := getNewPasswordRoute()
+	newPassword, err := getNewPasswordRoute(uModel, cModel, pModel, decryptor)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -203,8 +248,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	process, err := getProcessFormRoute(
-		models.NewUserModel(), models.NewCategoryModel(), models.NewPasswordModel())
+	process, err := getProcessFormRoute(uModel, cModel, pModel, decryptor)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -216,7 +260,7 @@ func main() {
 	http.Handle(LOGIN_RTE, login)
 	http.Handle(NEW_USER_RTE, newUser)
 	http.Handle(PASSWORDS_RTE, password)
-	http.Handle(NEW_PASSWORDS_RTE, newPassword)
+	http.Handle(EDIT_PASSWORD_RTE, newPassword)
 	http.Handle(PROCESS_FORM_RTE, process)
 	http.Handle(ASSETS_RTE, assetsRte)
 	http.ListenAndServe(":8080", nil)

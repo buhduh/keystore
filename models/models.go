@@ -7,6 +7,10 @@ import (
 	"sync"
 )
 
+const (
+	DATE_FMT string = "2006-01-02"
+)
+
 var connection *sql.DB
 
 var dbLock *sync.Mutex = new(sync.Mutex)

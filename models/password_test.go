@@ -9,18 +9,18 @@ import (
 	"time"
 )
 
-var userFoo, catFoo, catBar, passFoo, passBar string = "userFoo",
-	"catFoo", "catBar", "passFoo", "passBar"
-
 func TestPasswordModel(t *testing.T) {
-	varMap := map[string]string{
-		"userFoo": userFoo,
-		"catFoo":  catFoo,
-		"catBar":  catBar,
-		"passFoo": passFoo,
-		"passBar": passBar,
-	}
-	err := callSQLVars("prepare_passwords_test.sql", varMap)
+	err := callSQLVars("prepare_passwords_test.sql", varMap, false)
+	defer func() {
+		err = callSQLVars("clean_passwords_test.sql", varMap, false)
+		if err != nil {
+			msg := "Warning, this shouldn't fail, got error '%s'. " +
+				"You should manually inspect the database, " +
+				"this script attempts to reset database to original state."
+			t.Logf(msg, err)
+			t.Fail()
+		}
+	}()
 	if err != nil {
 		t.Logf("This cannot fail. Got error '%s'.", err)
 		t.FailNow()
@@ -28,9 +28,101 @@ func TestPasswordModel(t *testing.T) {
 	t.Run("userID", getPasswordsForUserID)
 	t.Run("add", addPassword)
 	t.Run("byID", getPasswordByID)
-	err = callSQLVars("clean_passwords_test.sql", varMap)
+	t.Run("updateWithName", updateName)
+}
+
+func updateName(t *testing.T) {
+	err := safelyConnect()
 	if err != nil {
-		t.Logf("This cannot fail. Got error '%s'.", err)
+		t.Logf("This cannot fail, got error '%s'.", err)
+		t.FailNow()
+	}
+	row := connection.QueryRow(`
+    select
+      p.id, p.password, p.user_name, p.notes, p.domain, p.expires, p.rule_set, c.name,
+      p.user_id, p.category_id
+    from passwords p
+    join users u on p.user_id=u.id and u.name=?
+    join categories c on p.category_id=c.id and c.name=?
+    `, varMap["userUpdate"], varMap["oldCatUpdate"])
+	var id, uID, cID int64
+	var pw, notes, domain, expires, ruleSet, catName, userName string
+	err = row.Scan(&id, &pw, &userName, &notes, &domain,
+		&expires, &ruleSet, &catName, &uID, &cID)
+	if err != nil {
+		t.Logf("This cannot fail, got error '%s'.", err)
+		t.FailNow()
+	}
+	tExp, err := time.Parse(DATE_FMT, expires)
+	if err != nil {
+		t.Logf("This cannot fail, got error '%s'.", err)
+		t.FailNow()
+	}
+	//TODO this is VERY redundant, oh well...
+	pwStruct := NewPassword(
+		id, uID, cID, pw, userName, notes, domain, ruleSet, catName, tExp,
+	)
+	var newPass, newName, newNotes, newDom, newExp, newRules string = "newPass",
+		"newName", "newNotes", "newDom", "2017-01-02", "newRules"
+	pwStruct.Password = newPass
+	pwStruct.UserName = newName
+	pwStruct.Notes = newNotes
+	pwStruct.Expires, _ = time.Parse(DATE_FMT, newExp)
+	pwStruct.RuleSet = newRules
+	pwStruct.Domain = newDom
+	pwStruct.CategoryName = varMap["newCatUpdate"]
+	pModel := NewPasswordModel()
+	err = pModel.UpdatePasswordWithCategoryName(pwStruct)
+	if err != nil {
+		t.Logf("Should not fail, got error '%s'.", err)
+		t.Fail()
+	}
+	row = connection.QueryRow(`
+    select 
+      p.id, p.password, p.user_name, p.notes, p.domain, p.expires, p.rule_set, c.name,
+      p.user_id, p.category_id
+    from passwords p
+    join categories c on p.category_id=c.id
+    where p.id=?
+  `, pwStruct.ID)
+	err = row.Scan(&id, &pw, &userName, &notes, &domain,
+		&expires, &ruleSet, &catName, &uID, &cID)
+	if err != nil {
+		t.Logf("This cannot fail, got error '%s'.", err)
+		t.FailNow()
+	}
+	if pwStruct.Password != pw {
+		t.Logf("Expected '%s', got '%s'.", pwStruct.Password, pw)
+		t.Fail()
+	}
+	if pwStruct.UserName != userName {
+		t.Logf("Expected '%s', got '%s'.", pwStruct.UserName, userName)
+		t.Fail()
+	}
+	if pwStruct.Notes != notes {
+		t.Logf("Expected '%s', got '%s'.", pwStruct.Notes, notes)
+		t.Fail()
+	}
+	if pwStruct.RuleSet != ruleSet {
+		t.Logf("Expected '%s', got '%s'.", pwStruct.RuleSet, ruleSet)
+		t.Fail()
+	}
+	if pwStruct.Domain != domain {
+		t.Logf("Expected '%s', got '%s'.", pwStruct.Domain, domain)
+		t.Fail()
+	}
+	if pwStruct.CategoryName != catName {
+		t.Logf("Expected '%s', got '%s'.", pwStruct.CategoryName, catName)
+		t.Fail()
+	}
+	if pwStruct.Expires.Format(DATE_FMT) != expires {
+		t.Logf("Expected '%s', got '%s'.", pwStruct.Expires.Format(DATE_FMT), expires)
+		t.Fail()
+	}
+	pwStruct.CategoryName = "asdfasdfadsfwret345"
+	err = pModel.UpdatePasswordWithCategoryName(pwStruct)
+	if err == nil {
+		t.Logf("Should have gotten an error, got nil.")
 		t.Fail()
 	}
 }
@@ -48,7 +140,7 @@ func buildCatMap(cats []*Category) map[int64]*Category {
 //assumes GetCategoriesForUserID() works
 func getPasswordsForUserID(t *testing.T) {
 	uModel := &UserModel{}
-	user, err := uModel.GetUserByName(userFoo)
+	user, err := uModel.GetUserByName(varMap["userFoo"])
 	if err != nil {
 		t.Logf("This cannot fail, got err '%s'.", err)
 		t.FailNow()
@@ -81,14 +173,14 @@ func getPasswordsForUserID(t *testing.T) {
 			t.Fail()
 		}
 		switch p.Password {
-		case passFoo:
-			if c.Name != catFoo {
-				t.Logf("Expected '%s', got '%s'.", catFoo, c.Name)
+		case varMap["passFoo"]:
+			if c.Name != varMap["catFoo"] {
+				t.Logf("Expected '%s', got '%s'.", varMap["catFoo"], c.Name)
 				t.Fail()
 			}
-		case passBar:
-			if c.Name != catBar {
-				t.Logf("Expected '%s', got '%s'.", catBar, c.Name)
+		case varMap["passBar"]:
+			if c.Name != varMap["catBar"] {
+				t.Logf("Expected '%s', got '%s'.", varMap["catBar"], c.Name)
 				t.Fail()
 			}
 		default:
@@ -102,7 +194,7 @@ func getPasswordsForUserID(t *testing.T) {
 //assumes GetCategoriesForUserID() works
 func addPassword(t *testing.T) {
 	uModel := &UserModel{}
-	user, err := uModel.GetUserByName(userFoo)
+	user, err := uModel.GetUserByName(varMap["userFoo"])
 	if err != nil {
 		t.Logf("This cannot fail, got err '%s'.", err)
 		t.FailNow()
@@ -120,10 +212,10 @@ func addPassword(t *testing.T) {
 		t.Logf("cats should have length greater than 0.")
 		t.FailNow()
 	}
-	pw := &Password{
-		Password: "blarg", Notes: "blarg", Domain: "yo this is a domin.",
-		Expires: time.Now(), RuleSet: "some rules", UserID: user.ID, CategoryID: cats[0].ID,
-	}
+	pw := NewPassword(
+		0, user.ID, cats[0].ID, "blarg", "blarg", "blarg", "www.domain.com",
+		"some rules", "a category?", time.Now(),
+	)
 	pModel := &PasswordModel{}
 	err = pModel.AddPassword(pw)
 	if err != nil {
@@ -176,7 +268,7 @@ func getPasswordByID(t *testing.T) {
 		t.Logf("This cannot fail, got error '%s'.", err)
 		t.FailNow()
 	}
-	row := stmt.QueryRow(userFoo, passFoo)
+	row := stmt.QueryRow(varMap["userFoo"], varMap["passFoo"])
 	var id int64
 	err = row.Scan(&id)
 	if err != nil {
@@ -197,8 +289,8 @@ func getPasswordByID(t *testing.T) {
 		t.Logf("Expected '%s', got '%s'.", pw.ID, id)
 		t.Fail()
 	}
-	if pw.Password != passFoo {
-		t.Logf("Expected '%s', got '%s'.", passFoo, pw.Password)
+	if pw.Password != varMap["passFoo"] {
+		t.Logf("Expected '%s', got '%s'.", varMap["passFoo"], pw.Password)
 		t.Fail()
 	}
 }

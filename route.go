@@ -8,7 +8,7 @@ const (
 	LOGIN_RTE         string = "/login"
 	NEW_USER_RTE             = "/new"
 	PASSWORDS_RTE            = "/passwords"
-	NEW_PASSWORDS_RTE        = PASSWORDS_RTE + "/new"
+	EDIT_PASSWORD_RTE        = PASSWORDS_RTE + "/password"
 	PROCESS_FORM_RTE         = "/process"
 	ASSETS_RTE               = "/assets/"
 )
