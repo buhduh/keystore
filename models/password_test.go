@@ -5,6 +5,7 @@
 package models
 
 import (
+	"database/sql"
 	"testing"
 	"time"
 )
@@ -28,101 +29,97 @@ func TestPasswordModel(t *testing.T) {
 	t.Run("userID", getPasswordsForUserID)
 	t.Run("add", addPassword)
 	t.Run("byID", getPasswordByID)
-	t.Run("updateWithName", updateName)
+	t.Run("update", updatePW)
 }
 
-func updateName(t *testing.T) {
+func getUpdateRow(password, uName, cName string) *sql.Row {
+	return connection.QueryRow(`
+    select 
+      p.id, p.password, p.user_name, p.notes, p.domain, 
+      p.expires, p.rule_set, p.user_id, p.category_id
+    from
+      passwords p 
+    join 
+      users u on p.user_id=u.id
+    join 
+      categories c on p.category_id=c.id
+    where p.password=? and u.name=? and c.name=?
+  `, password, uName, cName)
+}
+
+func updatePW(t *testing.T) {
 	err := safelyConnect()
 	if err != nil {
 		t.Logf("This cannot fail, got error '%s'.", err)
 		t.FailNow()
 	}
 	row := connection.QueryRow(`
-    select
-      p.id, p.password, p.user_name, p.notes, p.domain, p.expires, p.rule_set, c.name,
-      p.user_id, p.category_id
-    from passwords p
-    join users u on p.user_id=u.id and u.name=?
-    join categories c on p.category_id=c.id and c.name=?
-    `, varMap["userUpdate"], varMap["oldCatUpdate"])
-	var id, uID, cID int64
-	var pw, notes, domain, expires, ruleSet, catName, userName string
-	err = row.Scan(&id, &pw, &userName, &notes, &domain,
-		&expires, &ruleSet, &catName, &uID, &cID)
+    select c.id, p.id from categories c 
+    join passwords p 
+    join users u on u.id=c.user_id and u.id=p.user_id 
+    where c.name=? and u.name=? and p.password=?
+  `, varMap["newCatUpdate"], varMap["userUpdate"], varMap["passUpdate"])
+	var cID, pID int64
+	err = row.Scan(&cID, &pID)
 	if err != nil {
-		t.Logf("This cannot fail, got error '%s'.", err)
+		t.Logf("This shouldn't fail, got error '%s'.", err)
 		t.FailNow()
 	}
-	tExp, err := time.Parse(DATE_FMT, expires)
-	if err != nil {
-		t.Logf("This cannot fail, got error '%s'.", err)
-		t.FailNow()
-	}
-	//TODO this is VERY redundant, oh well...
-	pwStruct := NewPassword(
-		id, uID, cID, pw, userName, notes, domain, ruleSet, catName, tExp,
-	)
-	var newPass, newName, newNotes, newDom, newExp, newRules string = "newPass",
-		"newName", "newNotes", "newDom", "2017-01-02", "newRules"
-	pwStruct.Password = newPass
-	pwStruct.UserName = newName
-	pwStruct.Notes = newNotes
-	pwStruct.Expires, _ = time.Parse(DATE_FMT, newExp)
-	pwStruct.RuleSet = newRules
-	pwStruct.Domain = newDom
-	pwStruct.CategoryName = varMap["newCatUpdate"]
+	var newPass, newUName, newNotes, newDomain, newExpires, newRuleSet string = "newPassword",
+		"newUserName", "newNotes", "newdomain", "2016-02-02", "new rules"
+	//userID doesn't matter
+	expires, _ := time.Parse(DATE_FMT, newExpires)
+	pw := NewPassword(
+		pID, 0, cID, newPass, newUName,
+		newNotes, newDomain, newRuleSet, varMap["newCatUpdate"], expires)
 	pModel := NewPasswordModel()
-	err = pModel.UpdatePasswordWithCategoryName(pwStruct)
+	err = pModel.UpdatePassword(pw)
 	if err != nil {
-		t.Logf("Should not fail, got error '%s'.", err)
-		t.Fail()
+		t.Logf("Should not have gotten error, got '%s'.", err)
+		t.FailNow()
 	}
-	row = connection.QueryRow(`
-    select 
-      p.id, p.password, p.user_name, p.notes, p.domain, p.expires, p.rule_set, c.name,
-      p.user_id, p.category_id
-    from passwords p
-    join categories c on p.category_id=c.id
-    where p.id=?
-  `, pwStruct.ID)
-	err = row.Scan(&id, &pw, &userName, &notes, &domain,
-		&expires, &ruleSet, &catName, &uID, &cID)
+	var id, userID, categoryID int64
+	var password, notes, domain, expiresStr, ruleSet, userName string
+	row = getUpdateRow(
+		newPass, varMap["userUpdate"], varMap["newCatUpdate"])
+	err = row.Scan(
+		&id, &password, &userName, &notes, &domain,
+		&expiresStr, &ruleSet, &userID, &categoryID,
+	)
 	if err != nil {
 		t.Logf("This cannot fail, got error '%s'.", err)
 		t.FailNow()
 	}
-	if pwStruct.Password != pw {
-		t.Logf("Expected '%s', got '%s'.", pwStruct.Password, pw)
+	if id != pID {
+		t.Logf("Expected %d, got %d.", pID, id)
 		t.Fail()
 	}
-	if pwStruct.UserName != userName {
-		t.Logf("Expected '%s', got '%s'.", pwStruct.UserName, userName)
+	if cID != categoryID {
+		t.Logf("Expected %d, got %d.", cID, categoryID)
 		t.Fail()
 	}
-	if pwStruct.Notes != notes {
-		t.Logf("Expected '%s', got '%s'.", pwStruct.Notes, notes)
+	if newPass != password {
+		t.Logf("Expected '%s', got '%s'.", newPass, password)
 		t.Fail()
 	}
-	if pwStruct.RuleSet != ruleSet {
-		t.Logf("Expected '%s', got '%s'.", pwStruct.RuleSet, ruleSet)
+	if newUName != userName {
+		t.Logf("Expected '%s', got '%s'.", newUName, userName)
 		t.Fail()
 	}
-	if pwStruct.Domain != domain {
-		t.Logf("Expected '%s', got '%s'.", pwStruct.Domain, domain)
+	if newNotes != notes {
+		t.Logf("Expected '%s', got '%s'.", newNotes, notes)
 		t.Fail()
 	}
-	if pwStruct.CategoryName != catName {
-		t.Logf("Expected '%s', got '%s'.", pwStruct.CategoryName, catName)
+	if newDomain != domain {
+		t.Logf("Expected '%s', got '%s'.", newDomain, domain)
 		t.Fail()
 	}
-	if pwStruct.Expires.Format(DATE_FMT) != expires {
-		t.Logf("Expected '%s', got '%s'.", pwStruct.Expires.Format(DATE_FMT), expires)
+	if newRuleSet != ruleSet {
+		t.Logf("Expected '%s', got '%s'.", newRuleSet, ruleSet)
 		t.Fail()
 	}
-	pwStruct.CategoryName = "asdfasdfadsfwret345"
-	err = pModel.UpdatePasswordWithCategoryName(pwStruct)
-	if err == nil {
-		t.Logf("Should have gotten an error, got nil.")
+	if newExpires != expiresStr {
+		t.Logf("Expected '%s', got '%s'.", newExpires, expiresStr)
 		t.Fail()
 	}
 }

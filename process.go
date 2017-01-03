@@ -58,7 +58,7 @@ func getProcessFormRoute(
 			if err != nil {
 				http.Error(w, "Action not taken, unable to complete.", 501)
 			}
-			doUpdatePassword(w, r, sess, uModel, cModel, pModel)
+			doUpdatePassword(w, r, sess, uModel, cModel, pModel, decryptor)
 			return
 		default:
 			http.Error(w, "Action not taken, unable to complete.", 501)
@@ -71,54 +71,7 @@ func doNewPassword(
 	w http.ResponseWriter, r *http.Request, session session.ISession,
 	uModel models.IUserModel, cModel models.ICategoryModel,
 	pModel models.IPasswordModel, decryptor TwoWayDecryptor) {
-	uIDStr := session.Get("user_id")
-	if uIDStr == "" {
-		http.Redirect(w, r, LOGIN_RTE, 302)
-		return
-	}
-	uID, err := strconv.ParseInt(session.Get("user_id"), 10, 64)
-	if err != nil {
-		http.Redirect(w, r, LOGIN_RTE, 302)
-		return
-	}
-	user, err := uModel.GetUserByID(uID)
-	if err != nil || user == nil {
-		http.Error(w, "Something broke.", 500)
-		return
-	}
-	pwStr := strings.TrimSpace(r.FormValue("password"))
-	if pwStr == "" {
-		msg := url.QueryEscape("password is required")
-		http.Redirect(w, r, fmt.Sprintf("%s?error=%s", EDIT_PASSWORD_RTE, msg), 303)
-		return
-	}
-	catIDStr := strings.TrimSpace(r.FormValue("category"))
-	catName := strings.TrimSpace(r.FormValue("new_category"))
-	cat, err := doCategory(catIDStr, catName, uID, cModel)
-	if err != nil || cat == nil {
-		http.Error(w, "Unable to parse chosen category parameters.", 500)
-		return
-	}
-	uName := strings.TrimSpace(r.FormValue("user_name"))
-	notes := strings.TrimSpace(r.FormValue("notes"))
-	domain := strings.TrimSpace(r.FormValue("domain"))
-	ruleSet := strings.TrimSpace(r.FormValue("rule_set"))
-	pwEnc, err := decryptor.EncryptPassword(user.Salt, pwStr)
-	if err != nil {
-		http.Error(w, "Something broke.", 500)
-		return
-	}
-	expires := strings.TrimSpace(r.FormValue("expires"))
-	pw := models.NewPassword(
-		0, uID, cat.ID, pwEnc, uName, notes,
-		domain, ruleSet, cat.Name, doExpires(expires),
-	)
-	err = pModel.AddPassword(pw)
-	if err != nil {
-		http.Error(w, "Something broke trying to add password.", 500)
-		return
-	}
-	http.Redirect(w, r, PASSWORDS_RTE, 302)
+	doPassword(w, r, session, uModel, cModel, pModel, decryptor, 0)
 }
 
 func doExpires(expires string) time.Time {
@@ -174,9 +127,74 @@ func doCategory(
 func doUpdatePassword(
 	w http.ResponseWriter, r *http.Request, session session.ISession,
 	uModel models.IUserModel, cModel models.ICategoryModel,
-	pModel models.IPasswordModel) {
-	http.Error(w, "Not implemented", 501)
-	return
+	pModel models.IPasswordModel, decryptor TwoWayDecryptor) {
+	pIDStr := strings.TrimSpace(r.FormValue("id"))
+	pID, err := strconv.ParseInt(pIDStr, 10, 64)
+	if err != nil {
+		fmt.Printf("error: '%s'\n", err)
+		http.Redirect(w, r, PASSWORDS_RTE, 302)
+		return
+	}
+	doPassword(w, r, session, uModel, cModel, pModel, decryptor, pID)
+}
+
+//if pID == 0, new password
+func doPassword(
+	w http.ResponseWriter, r *http.Request, session session.ISession,
+	uModel models.IUserModel, cModel models.ICategoryModel,
+	pModel models.IPasswordModel, decryptor TwoWayDecryptor, pID int64) {
+	uIDStr := session.Get("user_id")
+	if uIDStr == "" {
+		http.Redirect(w, r, LOGIN_RTE, 302)
+		return
+	}
+	uID, err := strconv.ParseInt(session.Get("user_id"), 10, 64)
+	if err != nil {
+		http.Redirect(w, r, LOGIN_RTE, 302)
+		return
+	}
+	user, err := uModel.GetUserByID(uID)
+	if err != nil || user == nil {
+		http.Error(w, "Something broke.", 500)
+		return
+	}
+	pwStr := strings.TrimSpace(r.FormValue("password"))
+	if pwStr == "" {
+		msg := url.QueryEscape("password is required")
+		http.Redirect(w, r, fmt.Sprintf("%s?error=%s", EDIT_PASSWORD_RTE, msg), 303)
+		return
+	}
+	catIDStr := strings.TrimSpace(r.FormValue("category"))
+	catName := strings.TrimSpace(r.FormValue("new_category"))
+	cat, err := doCategory(catIDStr, catName, uID, cModel)
+	if err != nil || cat == nil {
+		http.Error(w, "Unable to parse chosen category parameters.", 500)
+		return
+	}
+	uName := strings.TrimSpace(r.FormValue("user_name"))
+	notes := strings.TrimSpace(r.FormValue("notes"))
+	domain := strings.TrimSpace(r.FormValue("domain"))
+	ruleSet := strings.TrimSpace(r.FormValue("rule_set"))
+	pwEnc, err := decryptor.EncryptPassword(user.Salt, pwStr)
+	if err != nil {
+		http.Error(w, "Something broke.", 500)
+		return
+	}
+	expires := strings.TrimSpace(r.FormValue("expires"))
+	pw := models.NewPassword(
+		pID, uID, cat.ID, pwEnc, uName, notes,
+		domain, ruleSet, cat.Name, doExpires(expires),
+	)
+	if pID == 0 {
+		err = pModel.AddPassword(pw)
+	} else {
+		err = pModel.UpdatePassword(pw)
+	}
+	if err != nil {
+		http.Error(w, "Something broke trying to add password.", 500)
+		return
+	}
+	http.Redirect(w, r, PASSWORDS_RTE, 302)
 }
 
 //TODO I should probably test this

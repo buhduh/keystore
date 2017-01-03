@@ -15,16 +15,9 @@ import (
 	"strings"
 )
 
-func getNewPasswordRoute(
-	uModel models.IUserModel, cModel models.ICategoryModel,
-	pModel models.IPasswordModel, decryptor TwoWayDecryptor) (*Route, error) {
-	return nil, nil
-}
-
 //TODO dependency inject session
-//TODO
-/*
-func getNewPasswordRoute(
+//TODO this is pretty ugly, should probably rewrite
+func getEditPasswordRoute(
 	uModel models.IUserModel, cModel models.ICategoryModel,
 	pModel models.IPasswordModel, decryptor TwoWayDecryptor) (*Route, error) {
 	view, err := NewView("data/edit_password.html", EDIT_PASSWORD_TAG)
@@ -55,6 +48,7 @@ func getNewPasswordRoute(
 			return
 		}
 		var pw, userName, domain, notes, catName, expires string
+		var action, id string = "new_password", "0"
 		pwIDStr := r.FormValue("id")
 		pwID, err := strconv.ParseInt(pwIDStr, 10, 64)
 		if err != nil || pwID != 0 {
@@ -62,8 +56,7 @@ func getNewPasswordRoute(
 			if err != nil {
 				goto donePassword
 			}
-			pw, err = decryptor.DecryptPassword(
-				user.Salt, os.Getenv(KEY_ENV), pass.Password)
+			pw, err = decryptor.DecryptPassword(user.Salt, pass.Password)
 			if err != nil {
 				goto donePassword
 			}
@@ -72,6 +65,8 @@ func getNewPasswordRoute(
 			notes = pass.Notes
 			catName = pass.CategoryName
 			expires = pass.Expires.Format(models.DATE_FMT)
+			action = "update_password"
+			id = pwIDStr
 		}
 	donePassword:
 		categories := []struct {
@@ -100,6 +95,8 @@ func getNewPasswordRoute(
 			Domain     string
 			Notes      string
 			Expires    string
+			Action     string
+			ID         string
 			Categories interface{}
 		}{
 			Nonce:      NewNonce(NONCE_LIFETIME),
@@ -108,13 +105,14 @@ func getNewPasswordRoute(
 			Domain:     domain,
 			Notes:      notes,
 			Expires:    expires,
+			Action:     action,
+			ID:         id,
 			Categories: categories,
 		}
 		view.Render(w, data)
 	}
 	return NewRoute(callback, DefaultVerifier{true}), nil
 }
-*/
 
 func getPasswordsRoute(
 	cModel models.ICategoryModel, pModel models.IPasswordModel) (*Route, error) {
@@ -240,7 +238,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	newPassword, err := getNewPasswordRoute(uModel, cModel, pModel, decryptor)
+	editPassword, err := getEditPasswordRoute(uModel, cModel, pModel, decryptor)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -260,7 +258,7 @@ func main() {
 	http.Handle(LOGIN_RTE, login)
 	http.Handle(NEW_USER_RTE, newUser)
 	http.Handle(PASSWORDS_RTE, password)
-	http.Handle(EDIT_PASSWORD_RTE, newPassword)
+	http.Handle(EDIT_PASSWORD_RTE, editPassword)
 	http.Handle(PROCESS_FORM_RTE, process)
 	http.Handle(ASSETS_RTE, assetsRte)
 	http.ListenAndServe(":8080", nil)

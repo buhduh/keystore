@@ -25,8 +25,7 @@ type IPasswordModel interface {
 	GetPasswordByID(int64) (*Password, error)
 	GetPasswordsForUserID(int64) ([]*Password, error)
 	AddPassword(*Password) error
-	UpdatePasswordWithCategoryName(*Password) error
-	UpdatePasswordWithCategoryID(*Password) error
+	UpdatePassword(*Password) error
 }
 
 type PasswordModel struct{}
@@ -65,63 +64,36 @@ func NewPasswordModel() *PasswordModel {
 	return new(PasswordModel)
 }
 
-func doUpdate(pw *Password, withID bool) error {
+//joins on category_id, make sure this value is correct when calling,
+func (p *PasswordModel) UpdatePassword(pw *Password) error {
 	err := safelyConnect()
 	if err != nil {
 		return err
 	}
-	queryFmt := `
+	stmt, err := connection.Prepare(`
     update passwords
-      set
-        password=?, user_name=?, notes=?, domain=?, expires=?,
-        rule_set=?, category_id=%s
+      set 
+        password=?, user_name=?, notes=?, domain=?, expires=?, rule_set=?, category_id=?
       where id=?
-  `
-	var repl string
-	params := []interface{}{
-		pw.Password, pw.UserName, pw.Notes, pw.Domain,
-		pw.Expires.Format(DATE_FMT), pw.RuleSet,
-	}
-	if withID {
-		repl = "?"
-		params = append(params, pw.CategoryID)
-	} else {
-		repl = `
-      (select id from categories
-      where user_id=? and name=?)
-    `
-		params = append(params, pw.UserID)
-		params = append(params, pw.CategoryName)
-	}
-	params = append(params, pw.ID)
-	stmt, err := connection.Prepare(fmt.Sprintf(queryFmt, repl))
+  `)
 	if err != nil {
 		return err
 	}
-	defer stmt.Close()
-	result, err := stmt.Exec(params...)
+	res, err := stmt.Exec(
+		pw.Password, pw.UserName, pw.Notes, pw.Domain, pw.Expires.Format(DATE_FMT),
+		pw.RuleSet, pw.CategoryID, pw.ID,
+	)
 	if err != nil {
 		return err
 	}
-	numAff, err := result.RowsAffected()
+	numAff, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
 	if numAff != 1 {
-		return fmt.Errorf("Expected to alter 1 row, altered %d instead.", numAff)
+		return fmt.Errorf("Did not update one row.")
 	}
 	return nil
-}
-
-//Uses Name to join the categories table so make sure
-//CategoryName is updated
-func (p PasswordModel) UpdatePasswordWithCategoryName(pw *Password) error {
-	return doUpdate(pw, false)
-}
-
-//Uses categoryID directly
-func (p PasswordModel) UpdatePasswordWithCategoryID(pw *Password) error {
-	return doUpdate(pw, true)
 }
 
 func (p PasswordModel) GetPasswordByID(pID int64) (*Password, error) {
