@@ -200,7 +200,8 @@ func doPassword(
 //TODO I should probably test this
 func doLogin(
 	w http.ResponseWriter, r *http.Request,
-	u models.IUserModel, session session.ISession) {
+	u models.IUserModel, session session.ISession,
+) {
 	var name, tPassword, code string
 	errors := make([]string, 0)
 	if name = r.FormValue("name"); name == "" {
@@ -233,8 +234,15 @@ func doLogin(
 	}
 	session.Set("logged_in", "true")
 	session.Set("user_id", strconv.FormatInt(user.ID, 10))
+	session.Set("ajax_token", generateAjaxToken())
 	http.SetCookie(w, session.GetCookie())
 	http.Redirect(w, r, PASSWORDS_RTE, 302)
+}
+
+func generateAjaxToken() string {
+	s := make([]byte, 16)
+	rand.Read(s)
+	return b64.StdEncoding.EncodeToString(s)
 }
 
 func doNewUser(w http.ResponseWriter, r *http.Request, u models.IUserModel) {

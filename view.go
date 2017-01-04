@@ -17,6 +17,7 @@ var GlobalView = struct {
 	NewUserLoc            string
 	PasswordsLoc          string
 	EditPasswordLoc       string
+	NewPasswordLoc        string
 	ProcessFormLoc        string
 	NonceFormName         string
 	RequiresLoginFormName string
@@ -24,11 +25,13 @@ var GlobalView = struct {
 	EditImg               string
 	CopyImg               string
 	DeleteImg             string
+	AjaxEndpoint          string
 }{
 	LoginLoc:              LOGIN_RTE,
 	NewUserLoc:            NEW_USER_RTE,
 	PasswordsLoc:          PASSWORDS_RTE,
 	EditPasswordLoc:       EDIT_PASSWORD_RTE,
+	NewPasswordLoc:        NEW_PASSWORD_RTE,
 	ProcessFormLoc:        PROCESS_FORM_RTE,
 	NonceFormName:         NONCE_FORM_NAME,
 	RequiresLoginFormName: REQ_LOGIN_FORM_NAME,
@@ -36,6 +39,7 @@ var GlobalView = struct {
 	EditImg:               ASSETS_RTE + "images/edit.png",
 	CopyImg:               ASSETS_RTE + "images/copy.png",
 	DeleteImg:             ASSETS_RTE + "images/delete.png",
+	AjaxEndpoint:          AJAX_RTE,
 }
 
 type View struct {
