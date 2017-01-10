@@ -355,21 +355,27 @@ func getAssetsRoute(assetDir string) (*Route, error) {
 }
 
 func main() {
-	key := flag.String(
-		"key",
-		"$&^$*(^JGDASDFAd(&*(DADasdf",
-		"The password encryption key.",
-	)
-	assets := flag.String(
-		"assets",
+	config := flag.String(
+		"config",
 		"",
-		"The location of the assets directory.",
+		"The location of the config.json file. Run generateConfig.py to autogenerate.",
 	)
 	flag.Parse()
+	cStruct, err := loadConfig(*config)
+	if err != nil {
+		log.Fatal("Could not load configuration. " + err.Error())
+	}
+	models.Configure(
+		cStruct.DatabaseName,
+		cStruct.DatabaseHost,
+		cStruct.DatabasePassword,
+		cStruct.DatabasePort,
+		cStruct.DatabaseUser,
+	)
 	uModel := models.NewUserModel()
 	cModel := models.NewCategoryModel()
 	pModel := models.NewPasswordModel()
-	decryptor := NewTwoWay(*key)
+	decryptor := NewTwoWay(cStruct.EncryptionKey)
 	tokenizer := NewTwoWay("")
 	login, err := getLoginRoute()
 	if err != nil {
@@ -395,7 +401,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	assetsRte, err := getAssetsRoute(*assets)
+	assetsRte, err := getAssetsRoute(cStruct.AssetsLocation)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -412,5 +418,5 @@ func main() {
 	http.Handle(PROCESS_FORM_RTE, process)
 	http.Handle(ASSETS_RTE, assetsRte)
 	http.Handle(AJAX_RTE, ajax)
-	http.ListenAndServe(":8080", nil)
+	http.ListenAndServe(fmt.Sprintf(":%s", cStruct.Port), nil)
 }

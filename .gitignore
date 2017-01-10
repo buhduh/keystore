@@ -1,2 +1,7 @@
 *.bak
 *.sw[a-z]
+#don't commit configuration files
+#run generateConfig.py and name
+#appropriately
+config*.json
+infrastructure/

@@ -36,6 +36,10 @@ func getSQLTestsDir() (string, error) {
 	return temp + "/sql_tests", nil
 }
 
+func init() {
+	Configure("keystore", "localhost", "", "", "root")
+}
+
 //TODO move all scripts to the cleaner vars method
 func callSQL(scriptName string) error {
 	path, err := getSQLTestsDir()
