@@ -13,3 +13,4 @@ infrastructure/*
 infrastructure/debian/mykeystore
 infrastructure/debian/*.deb
 infrastructure/debian/etc/ssl
+bindata.go
