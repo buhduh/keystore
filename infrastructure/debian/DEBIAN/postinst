@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#lock down nginx certs
+certs="/etc/ssl/certs/dhparam.pem /etc/ssl/certs/mykeystore.net.pem /etc/ssl/private/mykeystore.net.pem"
+chmod 600 $certs
+chown root:root $certs
+
+find /usr/local/etc/mykeystore -type d -exec chmod 700 {} \;
+find /usr/local/etc/mykeystore -type f -exec chmod 600 {} \;
+find /usr/local/etc/mykeystore -exec chown mykeystore:mykeystore {} \;
+
+chmod 700 /usr/local/bin/keystore
+chown mykeystore:mykeystore /usr/local/bin/keystore
+
+chmod 644 /etc/nginx/sites-available/mykeystore.net.conf
+ln -s /etc/nginx/sites-available/mykeystore.net.conf /etc/nginx/sites-enabled/mykeystore.net
+
+chmod 755 /etc/init.d/mykeystore
+chown root:root /etc/init.d/mykeystore
+
+update-rc.d mykeystore defaults
+
+sleep 1
+
+service nginx start
+service mykeystore start

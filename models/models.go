@@ -44,19 +44,20 @@ func safelyConnect() error {
 		}
 		address := fmt.Sprintf("%s:%s", config.dHost, port)
 		if config.dPW != "" {
-			config.dPW = fmt.Sprintf("':%s'", config.dPW)
+			config.dPW = fmt.Sprintf(":%s", config.dPW)
 		}
 		dsn := fmt.Sprintf(openFmt, config.dUser, config.dPW, address, config.dName)
-		fmt.Printf("dsn: %s\n", dsn)
 		var err error
 		connection, err = sql.Open("mysql", dsn)
 		if err != nil {
+			fmt.Printf("got an error: %s\n", err)
 			return err
 		}
 	}
 	err := connection.Ping()
 	dbLock.Unlock()
 	if err != nil {
+		fmt.Printf("got an error: %s\n", err)
 		return err
 	}
 	return nil

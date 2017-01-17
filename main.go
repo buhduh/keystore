@@ -318,14 +318,14 @@ func getLoginRoute() (*Route, error) {
 	return NewRoute(callback, DefaultVerifier{}), nil
 }
 
-func getNewUserRoute() (*Route, error) {
+func getNewUserRoute(domain string) (*Route, error) {
 	view, err := NewView("data/new.html", NEW_USER_TAG)
 	if err != nil {
 		return nil, err
 	}
 	var callback Action
 	callback = func(w http.ResponseWriter, r *http.Request) {
-		qr := NewQR()
+		qr := NewQR(domain)
 		data := struct {
 			Nonce       Nonce
 			QRSecret    string
@@ -350,6 +350,21 @@ func getAssetsRoute(assetDir string) (*Route, error) {
 		}
 		path := fmt.Sprintf("%s/%s", assetDir, p)
 		http.ServeFile(w, r, path)
+	}
+	return NewRoute(callback, nil), nil
+}
+
+func getLogoutRoute() (*Route, error) {
+	var callback Action
+	callback = func(w http.ResponseWriter, r *http.Request) {
+		session, err := session.NewSession(
+			r.Cookies(), session.DEFAULT_SESSION_AGE)
+		if err != nil {
+			http.Redirect(w, r, LOGIN_RTE, 302)
+			return
+		}
+		session.Set("logged_in", "false")
+		http.Redirect(w, r, LOGIN_RTE, 302)
 	}
 	return NewRoute(callback, nil), nil
 }
@@ -393,7 +408,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	newUser, err := getNewUserRoute()
+	newUser, err := getNewUserRoute(cStruct.Domain)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -409,7 +424,9 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	logout, _ := getLogoutRoute()
 	http.Handle("/", login)
+	http.Handle(LOGOUT_RTE, logout)
 	http.Handle(LOGIN_RTE, login)
 	http.Handle(NEW_USER_RTE, newUser)
 	http.Handle(PASSWORDS_RTE, password)

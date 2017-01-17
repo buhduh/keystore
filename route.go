@@ -13,6 +13,7 @@ const (
 	PROCESS_FORM_RTE         = "/process"
 	ASSETS_RTE               = "/assets/"
 	AJAX_RTE                 = "/ajax"
+	LOGOUT_RTE               = "/logout"
 )
 
 type Action func(http.ResponseWriter, *http.Request)

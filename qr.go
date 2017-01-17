@@ -11,7 +11,8 @@ import (
 )
 
 const (
-	QR_FMT_STR string = "otpauth://totp/MyPersonal%%3Akeystore@keystore.com?secret=%s&issuer=keystore"
+	//QR_FMT_STR string = "otpauth://totp/MyPersonal%%3Akeystore@keystore.com?secret=%s&issuer=keystore"
+	QR_FMT_STR string = "otpauth://totp/keystore@%s?secret=%s&issuer=%s"
 )
 
 type QR struct {
@@ -19,12 +20,12 @@ type QR struct {
 	URI    []byte
 }
 
-func NewQR() QR {
+func NewQR(domain string) QR {
 	s := make([]byte, 20)
 	//Going to assume this doesn't fail
 	rand.Read(s)
 	secret := b32.StdEncoding.EncodeToString(s)
-	qrcode, _ := qr.Encode(fmt.Sprintf(QR_FMT_STR, secret), qr.L, qr.Auto)
+	qrcode, _ := qr.Encode(fmt.Sprintf(QR_FMT_STR, domain, secret, domain), qr.L, qr.Auto)
 	qrcode, _ = barcode.Scale(qrcode, 100, 100)
 	buff := new(bytes.Buffer)
 	png.Encode(buff, qrcode)

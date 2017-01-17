@@ -1,0 +1,7 @@
+Package: mykeystore
+Version: 0.1.0
+Architecture: amd64
+Maintainer: Dale Owens <physicali2001@yahoo.com>
+Depends: nginx-full
+Description: Package to get the keystore binary to run,
+  including correct nginx ssl certs.

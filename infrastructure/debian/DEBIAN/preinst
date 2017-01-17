@@ -1,0 +1,4 @@
+#!/bin/bash
+service nginx stop 2>1
+service mykeystore stop 2>1
+adduser --system --group --disabled-login --disabled-password --no-create-home mykeystore

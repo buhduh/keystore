@@ -26,6 +26,7 @@ var GlobalView = struct {
 	CopyImg               string
 	DeleteImg             string
 	AjaxEndpoint          string
+	LogoutLoc             string
 }{
 	LoginLoc:              LOGIN_RTE,
 	NewUserLoc:            NEW_USER_RTE,
@@ -40,6 +41,7 @@ var GlobalView = struct {
 	CopyImg:               ASSETS_RTE + "images/copy.png",
 	DeleteImg:             ASSETS_RTE + "images/delete.png",
 	AjaxEndpoint:          AJAX_RTE,
+	LogoutLoc:             LOGOUT_RTE,
 }
 
 type View struct {

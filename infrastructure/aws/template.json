@@ -1,0 +1,106 @@
+{
+  "AWSTemplateFormatVersion" : "2010-09-09",
+  "Parameters": {
+    "ImageID": {
+      "Type": "String",
+      "Description": "AMI ID."
+    },
+    "InstanceType": {
+      "Type": "String",
+      "Description": "Instance type."
+    },
+    "SSHKey": {
+      "Type": "String",
+      "Description": "SSH key to use."
+    },
+    "Deb": {
+      "Type": "String",
+      "Description": "mykeystore debian package name."
+    },
+    "SecurityGroupIDs": {
+      "Type": "CommaDelimitedList",
+      "Description": "SSH key to use."
+    },
+    "Subnets": {
+      "Type": "CommaDelimitedList",
+      "Description": "Subnets for ASG."
+    },
+    "ELBNames": {
+      "Type": "CommaDelimitedList",
+      "Description": "ELB Names"
+    },
+    "InstanceName": {
+      "Type": "String",
+      "Description": "EC2 Instance Tag: Name"
+    },
+    "MaxNum": {
+      "Type": "String",
+      "Description": "Maximum number of instances."
+    },
+    "MinNum": {
+      "Type": "String",
+      "Description": "Mininum number of instances."
+    },
+    "Domain": {
+      "Type": "String",
+      "Description": "FQDN"
+    },
+    "HostedZoneId": {
+      "Type": "String",
+      "Description": "Hosted Zone Id from Route53."
+    },
+    "IsPublic": {
+      "Type": "String",
+      "Description": "Should the instance receive a public IP."
+    },
+    "InstanceProfileRole": {
+      "Type": "String",
+      "Description": "The instance profile role."
+    }
+  },
+  "Resources" : {
+    "AutoScalingGroup": {
+      "Type": "AWS::AutoScaling::AutoScalingGroup",
+      "Properties": {
+        "LaunchConfigurationName": { "Ref": "LaunchConfig" },
+        "MaxSize": { "Ref": "MaxNum" },
+        "MinSize": { "Ref": "MinNum" },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": { "Ref": "InstanceName" },
+            "PropagateAtLaunch": true
+          }
+        ],
+        "VPCZoneIdentifier": { "Ref": "Subnets" },
+        "LoadBalancerNames": { "Ref": "ELBNames" }
+      }
+    },
+    "LaunchConfig": {
+      "Type": "AWS::AutoScaling::LaunchConfiguration",
+      "Properties": {
+        "ImageId": { "Ref": "ImageID" },
+        "InstanceType": { "Ref": "InstanceType" },
+        "KeyName": { "Ref": "SSHKey" },
+        "SecurityGroups": { "Ref": "SecurityGroupIDs"},
+        "AssociatePublicIpAddress": true,
+        "UserData": { "Fn::Base64": {
+          "Fn::Join": [ "", [
+            "#!/bin/bash -x\n",
+            "exec > /tmp/part-001.log 2>&1\n",
+            "sudo apt-get update\n",
+            "sudo apt-get -y install nginx-full\n",
+            "sudo apt-get -y install awscli\n",
+            "aws s3 cp s3://mykeystore/packages/", { "Ref": "Deb" }, " /tmp/\n",
+            "sudo dpkg -i /tmp/", { "Ref": "Deb" }, "\n",
+            "sudo rm -rf /tmp/", { "Ref": "Deb" }, "\n"
+          ]]
+        }},
+        "AssociatePublicIpAddress": { "Ref": "IsPublic" },
+        "IamInstanceProfile": { "Ref": "InstanceProfileRole" }
+      }
+    }
+  },
+  "Outputs": {
+  }
+}

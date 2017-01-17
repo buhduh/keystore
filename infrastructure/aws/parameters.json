@@ -1,0 +1,58 @@
+[
+  {
+    "ParameterKey": "ImageID",
+    "ParameterValue": "ami-b05203d0"
+  },
+  {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "t2.micro"
+  },
+  {
+    "ParameterKey": "SSHKey",
+    "ParameterValue": "KeyPairMyKeystore"
+  },
+  {
+    "ParameterKey": "SecurityGroupIDs",
+    "ParameterValue": "sg-6982530e"
+  },
+  {
+    "ParameterKey": "MaxNum",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "MinNum",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "InstanceName",
+    "ParameterValue": "mykeystore"
+  },
+  {
+    "ParameterKey": "Subnets",
+    "ParameterValue": "subnet-71cc4715,subnet-49bc6511"
+  },
+  {
+    "ParameterKey": "HostedZoneId",
+    "ParameterValue": "Z1O0BT40P6ZFTJ"
+  },
+  {
+    "ParameterKey": "Domain",
+    "ParameterValue": "mykeystore.net"
+  },
+  {
+    "ParameterKey": "ELBNames",
+    "ParameterValue": "mykeystoreELB"
+  },
+  {
+    "ParameterKey": "Deb",
+    "ParameterValue": "mykeystore-0.1.0.deb"
+  },
+  {
+    "ParameterKey": "IsPublic",
+    "ParameterValue": "false"
+  },
+  {
+    "ParameterKey": "InstanceProfileRole",
+    "ParameterValue": "S3ReadOnly"
+  }
+]

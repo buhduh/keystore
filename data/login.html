@@ -12,6 +12,7 @@
   </style>
   <h1>Login</h1>
   <h3><a href="{{.G.NewUserLoc}}">New</a></h3>
+  <h3><a href="{{.G.LogoutLoc}}">Logout</a></h3>
   <form method="POST" action="{{.G.ProcessFormLoc}}">
     <input type="hidden" name="{{.G.NonceFormName}}" value="{{.D.Nonce}}" /> 
     <input type="hidden" name="{{.G.RequiresLoginFormName}}" value="false" /> 
@@ -23,7 +24,7 @@
       </li>
       <li>
         <label for="password">Password: </label>
-        <input type="text" name="password" required/>
+        <input type="password" name="password" required/>
       </li>
       <li>
         <label for="Code">Code: </label>
