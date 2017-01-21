@@ -6,11 +6,4 @@
 config*.json
 infrastructure
 bin
-!infrastructure/
-infrastructure/*
-!infrastructure/debian
-!infrastructure/aws
-infrastructure/debian/mykeystore
-infrastructure/debian/*.deb
-infrastructure/debian/etc/ssl
 bindata.go
