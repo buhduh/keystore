@@ -22,6 +22,7 @@ deploy: test build config.production.json infrastructure
 	$(MAKE) -C infrastructure $@
 
 build:
+	go-bindata data/
 	go build -o bin/keystore -ldflags="-s -w"
 
 config.production.json:
