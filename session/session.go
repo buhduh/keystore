@@ -20,6 +20,7 @@ const (
 type ISession interface {
 	Set(string, string)
 	Get(string) string
+	Remove()
 	GetCookie() *http.Cookie
 }
 
@@ -58,6 +59,21 @@ func cleanSessionMap() {
 	for _, k := range keys {
 		delete(sessionMap, k)
 	}
+}
+
+func (s *Session) Remove() {
+	key := s.cookie.Value
+	if key == "" {
+		return
+	}
+	lock.RLock()
+	if _, found := sessionMap[key]; !found {
+		return
+	}
+	lock.RUnlock()
+	lock.Lock()
+	defer lock.Unlock()
+	delete(sessionMap, key)
 }
 
 //age in seconds

@@ -6,7 +6,13 @@ import (
 	"time"
 )
 
-func TestSessionExpiration(t *testing.T) {
+func TestSession(t *testing.T) {
+	t.Run("expired", sessionExpirationTest)
+	t.Run("twoSessions", twoSessionsTest)
+	t.Run("remove", testRemoveSession)
+}
+
+func sessionExpirationTest(t *testing.T) {
 	//The clock is ticking!!!!Will test expiration in one second
 	var key, val string = "foo", "bar"
 	session, err := NewSession(make([]*http.Cookie, 0), 1)
@@ -46,7 +52,32 @@ func TestSessionExpiration(t *testing.T) {
 	}
 }
 
-func Test2Sessions(t *testing.T) {
+func testRemoveSession(t *testing.T) {
+	oneName := "oneKey"
+	twoName := "twoKey"
+	sess1 := newSession(5, oneName)
+	sess2 := newSession(5, twoName)
+	if sess1 == nil || sess2 == nil {
+		t.Logf("Sessions should not be nil.")
+		t.FailNow()
+	}
+	key1, val1, key2, val2 := "myKey1", "myVal1", "myKey1", "myKey2"
+	sess1.Set(key1, val1)
+	sess2.Set(key1, val1)
+	sess1.Set(key2, val2)
+	sess2.Set(key2, val2)
+	sess1.Remove()
+	if _, found := sessionMap[oneName]; found {
+		t.Logf("sessionMap should not have a key for: '%s'.", oneName)
+		t.Fail()
+	}
+	if _, found := sessionMap[twoName]; !found {
+		t.Logf("sessionMap should contain a value for key: '%s'.", twoName)
+		t.Fail()
+	}
+}
+
+func twoSessionsTest(t *testing.T) {
 	var key, val1, val2 string = "foo", "bar", "baz"
 	sess1, err := NewSession(make([]*http.Cookie, 0), 1)
 	sess1.Set(key, val1)

@@ -363,7 +363,7 @@ func getLogoutRoute() (*Route, error) {
 			http.Redirect(w, r, LOGIN_RTE, 302)
 			return
 		}
-		session.Set("logged_in", "false")
+		session.Remove()
 		http.Redirect(w, r, LOGIN_RTE, 302)
 	}
 	return NewRoute(callback, nil), nil
