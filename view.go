@@ -25,6 +25,7 @@ var GlobalView = struct {
 	EditImg               string
 	CopyImg               string
 	DeleteImg             string
+	CssSrc                string
 	AjaxEndpoint          string
 	LogoutLoc             string
 }{
@@ -40,6 +41,7 @@ var GlobalView = struct {
 	EditImg:               ASSETS_RTE + "images/edit.png",
 	CopyImg:               ASSETS_RTE + "images/copy.png",
 	DeleteImg:             ASSETS_RTE + "images/delete.png",
+	CssSrc:                ASSETS_RTE + "css/core.css",
 	AjaxEndpoint:          AJAX_RTE,
 	LogoutLoc:             LOGOUT_RTE,
 }

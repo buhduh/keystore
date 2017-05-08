@@ -1,0 +1,56 @@
+html {
+  font-size: 16px;
+  line-height: 1.5rem;
+  font-weight: 400;
+  font-family: 'Helvetica', 'Arial', sans-serif;
+}
+body {
+  background-color: $bg-light-gray;
+  color: #444;
+}
+header {
+  padding: 1rem 0;
+  > div {
+    display: inline-block;
+    &:last-child {
+      float: right;
+    }
+  }
+}
+h1, h2, h3, h4, h5 {
+  text-align: center;
+  line-height: 1.5em;
+}
+h1 {
+  font-size: 2rem;
+}
+a {
+  color: $link-blue;
+  text-decoration: none;
+}
+svg {
+  &.icon {
+    width: 24px;
+    height: 24px;
+    fill: $icon-gray;
+  }
+}
+.hidden {
+  display: none;
+}
+.padTop {
+  padding-top:0.5rem;
+}
+.padLt {
+  padding-left:0.5rem;
+}
+.padHorz {
+  padding-left:0.5rem;
+  padding-right: 0.5rem;
+}
+.padTopLg {
+  padding-top:0.75rem;
+}
+.padRt {
+  padding-right:0.5rem;
+}

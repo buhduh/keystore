@@ -1,0 +1,16 @@
+.collapsibleTrigger {
+    cursor: pointer;
+    display: block;
+}
+
+.collapsibleTarget {
+    transition: height 0.25s ease;
+    overflow-y: hidden;
+    overflow-x: hidden;
+    &:last-child {
+        border-bottom: none;
+    }
+    > div {
+        padding: 10px;
+    }
+}

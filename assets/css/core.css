@@ -1,0 +1,219 @@
+/* http://meyerweb.com/eric/tools/css/reset/
+   v2.0 | 20110126
+   License: none (public domain)
+*/
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
+main, menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline; }
+
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure,
+footer, header, hgroup, main, menu, nav, section {
+  display: block; }
+
+body {
+  line-height: 1; }
+
+ol, ul {
+  list-style: none; }
+
+blockquote, q {
+  quotes: none; }
+  blockquote:before, blockquote:after, q:before, q:after {
+    content: '';
+    content: none; }
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0; }
+
+.collapsibleTrigger {
+  cursor: pointer;
+  display: block; }
+
+.collapsibleTarget {
+  transition: height 0.25s ease;
+  overflow-y: hidden;
+  overflow-x: hidden; }
+  .collapsibleTarget:last-child {
+    border-bottom: none; }
+  .collapsibleTarget > div {
+    padding: 10px; }
+
+html {
+  font-size: 16px;
+  line-height: 1.5rem;
+  font-weight: 400;
+  font-family: 'Helvetica', 'Arial', sans-serif; }
+
+body {
+  background-color: #f3f5f9;
+  color: #444; }
+
+header {
+  padding: 1rem 0; }
+  header > div {
+    display: inline-block; }
+    header > div:last-child {
+      float: right; }
+
+h1, h2, h3, h4, h5 {
+  text-align: center;
+  line-height: 1.5em; }
+
+h1 {
+  font-size: 2rem; }
+
+a {
+  color: #7e9eff;
+  text-decoration: none; }
+
+svg.icon {
+  width: 24px;
+  height: 24px;
+  fill: #808080; }
+
+.hidden {
+  display: none; }
+
+.padTop {
+  padding-top: 0.5rem; }
+
+.padLt {
+  padding-left: 0.5rem; }
+
+.padHorz {
+  padding-left: 0.5rem;
+  padding-right: 0.5rem; }
+
+.padTopLg {
+  padding-top: 0.75rem; }
+
+.padRt {
+  padding-right: 0.5rem; }
+
+button, .btn {
+  display: inline-block;
+  border: none;
+  padding: 1rem;
+  font-size: 1rem;
+  background-color: #104da1;
+  color: #fff;
+  outline: none;
+  cursor: pointer; }
+  button svg, .btn svg {
+    float: left; }
+  button span, .btn span {
+    display: inline-block;
+    padding: 0.3rem 0.25rem 0 0.25rem; }
+  button.btn-primary, .btn.btn-primary {
+    background-color: #104da1; }
+    button.btn-primary svg, .btn.btn-primary svg {
+      fill: #fff; }
+  button.btn-full, .btn.btn-full {
+    width: 100%; }
+  button.btn-small, .btn.btn-small {
+    padding: 0.5rem 1rem; }
+  button.btn-tertiary, .btn.btn-tertiary {
+    background-color: #fff;
+    color: #313131;
+    border: 1px solid #dadada; }
+    button.btn-tertiary svg, .btn.btn-tertiary svg {
+      fill: #808080; }
+
+label {
+  display: inline-block;
+  padding-right: 0.5rem;
+  line-height: 1.5; }
+  label svg {
+    vertical-align: middle; }
+
+.field-container {
+  padding: 0.5rem;
+  display: flex;
+  box-sizing: border-box; }
+  .field-container input {
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    border-bottom: 2px solid #d2d2d2;
+    padding: 0.3rem 0;
+    flex-grow: 1; }
+  .field-container img {
+    margin: 0 auto; }
+
+.module {
+  padding: 1rem;
+  background-color: #fff;
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 4px rgba(148, 154, 166, 0.35); }
+  .module.center {
+    margin: 0 auto; }
+  .module.short-modal {
+    width: 300px; }
+
+.table-container table {
+  width: 100%;
+  text-align: left; }
+  .table-container table td, .table-container table th {
+    padding: 0.5rem; }
+  .table-container table thead {
+    border-bottom: 1px solid #dadada;
+    font-weight: bold; }
+
+.table-container .row .col {
+  padding: 0.5rem; }
+
+section#Passwords {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem; }
+  section#Passwords h2 {
+    font-size: 1.5rem;
+    padding: 0 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid #808080; }
+  section#Passwords .collapsibleTrigger:hover {
+    background-color: #f3f5f9; }
+  section#Passwords .collapsibleTrigger .col {
+    padding: 1rem 0.5rem; }
+  section#Passwords .collapsibleTarget {
+    background-color: #f3f5f9;
+    border-bottom: 1px solid #dadada; }
+  section#Passwords .cat-title {
+    font-weight: bold;
+    font-size: 1.2rem;
+    line-height: 1rem; }
+
+input#password_container {
+  border: none;
+  background: transparent;
+  position: absolute;
+  top: -9999px;
+  left: -9999px; }
+
+section#EditNewPassword {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 3rem; }
+  section#EditNewPassword h2 {
+    font-size: 1.5rem;
+    padding: 0 0.5rem;
+    text-align: left;
+    border-bottom: 1px solid #808080; }

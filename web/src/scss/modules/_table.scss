@@ -1,0 +1,19 @@
+.table-container {
+  table {
+    width: 100%;
+    text-align: left;
+    td, th {
+      padding: 0.5rem;
+    }
+    thead {
+      border-bottom: 1px solid #dadada;
+      font-weight: bold;
+    }
+  }
+  .row {
+    .col {
+      padding: 0.5rem;
+    }
+  }
+}
+
