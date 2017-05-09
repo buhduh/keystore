@@ -37,7 +37,7 @@ func getSQLTestsDir() (string, error) {
 }
 
 func init() {
-	Configure("keystore", "localhost", "monkeyshit", "", "andy")
+	Configure("keystore", "localhost", "", "", "root")
 }
 
 //TODO move all scripts to the cleaner vars method
@@ -51,7 +51,7 @@ func callSQL(scriptName string) error {
 		return err
 	}
 	//TODO, this fails for different users/database names...
-	cmd := exec.Command("mysql", "-u", "andy", "--password", "monkeyshit", "keystore")
+	cmd := exec.Command("mysql", "-u", "root", "keystore")
 	in, err := ioutil.ReadFile(cStr)
 	if err != nil {
 		return err
@@ -87,8 +87,7 @@ func callSQLVars(scriptName string, vars map[string]string, debug bool) error {
 	}
 	//TODO, this fails for different users/database names...
 	comStr := fmt.Sprintf(comFmt, varStr, srcStr)
-	//cmd := exec.Command("mysql", "-u", "andy", "keystore", "-e", comStr)
-	cmd := exec.Command("mysql", "-u", "andy", "--password", "monkeyshit", "keystore", "-e", comStr)
+	cmd := exec.Command("mysql", "-u", "root", "keystore", "-e", comStr)
 	if debug {
 		println(comStr)
 	}
