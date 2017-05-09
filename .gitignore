@@ -8,3 +8,5 @@ infrastructure
 bin
 bindata.go
 node_modules/
+pkg/linux_amd64/github.com/jteeuwen/go-bindata.a
+src/github.com/jteeuwen/go-bindata
