@@ -4,7 +4,7 @@
   "description": "the front-end build for keystore app",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build-js": "rm -rf ../assets/js; mkdir -p ../assets/js; browserify ./src/js/passwords.js > ../assets/js/passwords.js && browserify ./src/js/editNewPassword.js > ../assets/js/editNewPassword.js",
+    "build-js": "rm -rf ../assets/js; mkdir -p ../assets/js; browserify ./src/js/passwords.js > ../assets/js/passwords.js",
     "build-css": "rm -rf ../assets/css; mkdir -p ../assets/css; node-sass --include-path src/scss src/scss/core.scss ../assets/css/core.css",
     "build": "rm -rf ../assets/css; rm -rf ../assets/js; npm run build-js; npm run build-css"
   },

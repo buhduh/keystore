@@ -43,19 +43,6 @@ table {
   border-collapse: collapse;
   border-spacing: 0; }
 
-.collapsibleTrigger {
-  cursor: pointer;
-  display: block; }
-
-.collapsibleTarget {
-  transition: height 0.25s ease;
-  overflow-y: hidden;
-  overflow-x: hidden; }
-  .collapsibleTarget:last-child {
-    border-bottom: none; }
-  .collapsibleTarget > div {
-    padding: 10px; }
-
 html {
   font-size: 16px;
   line-height: 1.5rem;
@@ -157,6 +144,19 @@ label {
     flex-grow: 1; }
   .field-container img {
     margin: 0 auto; }
+
+.collapsibleTrigger {
+  cursor: pointer;
+  display: block; }
+
+.collapsibleTarget {
+  transition: height 0.25s ease;
+  overflow-y: hidden;
+  overflow-x: hidden; }
+  .collapsibleTarget:last-child {
+    border-bottom: none; }
+  .collapsibleTarget > div {
+    padding: 10px; }
 
 .module {
   padding: 1rem;
