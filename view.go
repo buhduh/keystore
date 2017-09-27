@@ -22,9 +22,7 @@ var GlobalView = struct {
 	NonceFormName         string
 	RequiresLoginFormName string
 	ActionFormName        string
-	EditImg               string
-	CopyImg               string
-	DeleteImg             string
+	CssSrc                string
 	AjaxEndpoint          string
 	LogoutLoc             string
 }{
@@ -37,9 +35,7 @@ var GlobalView = struct {
 	NonceFormName:         NONCE_FORM_NAME,
 	RequiresLoginFormName: REQ_LOGIN_FORM_NAME,
 	ActionFormName:        ACTION_FORM_NAME,
-	EditImg:               ASSETS_RTE + "images/edit.png",
-	CopyImg:               ASSETS_RTE + "images/copy.png",
-	DeleteImg:             ASSETS_RTE + "images/delete.png",
+	CssSrc:                ASSETS_RTE + "css/core.css",
 	AjaxEndpoint:          AJAX_RTE,
 	LogoutLoc:             LOGOUT_RTE,
 }

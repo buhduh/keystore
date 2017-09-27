@@ -1,0 +1,65 @@
+@import '../vars/colors.scss';
+button, .btn {
+  display: inline-block;
+  border: none;
+  padding: 1rem;
+  font-size: 1rem;
+  background-color: $blue;
+  color: #fff;
+  outline: none;
+  cursor: pointer;
+  svg {
+    float: left;
+  }
+  span {
+    display: inline-block;
+    padding: 0.3rem 0.25rem 0 0.25rem;
+  }
+  &.btn-primary {
+    background-color: $blue;
+    svg {
+      //TODO make a var
+      fill: #fff;
+    }
+  }
+  &.btn-full {
+    width: 100%;
+  }
+  &.btn-small {
+    padding: 0.5rem 1rem;
+  }
+  &.btn-tertiary {
+    background-color: #fff;
+    color: $bg-dark-gray;
+    border: 1px solid #dadada;
+    svg {
+      fill: $icon-gray;
+    }
+  }
+}
+label {
+  display: inline-block;
+  padding-right: 0.5rem;
+  line-height: 1.5;
+  svg {
+    vertical-align: middle;
+  }
+}
+.field-container {
+  padding: 0.5rem;
+  display: flex;
+  //TODO make border-box a standard for all block level elements
+  box-sizing: border-box;
+  input {
+    border: none;
+    outline: none;
+    font-size: 1rem;
+    //TODO make a var
+    border-bottom: 2px solid #d2d2d2;
+    padding: 0.3rem 0;
+    flex-grow: 1;
+  }
+  img {
+    margin: 0 auto;
+  }
+}

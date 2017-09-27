@@ -1,0 +1,12 @@
+.module {
+  padding: 1rem;
+  background-color: #fff;
+  border-radius: 0.25rem;
+  box-shadow: 0 2px 4px rgba(148,154,166,0.35);
+  &.center {
+    margin: 0 auto;
+  }
+  &.short-modal {
+    width: 300px;
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "name": "keystore-web",
+  "version": "0.0.0",
+  "description": "the front-end build for keystore app",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build-js": "rm -rf ../assets/js; mkdir -p ../assets/js; browserify ./src/js/passwords.js > ../assets/js/passwords.js",
+    "build-css": "rm -rf ../assets/css; mkdir -p ../assets/css; node-sass --include-path src/scss src/scss/core.scss ../assets/css/core.css",
+    "build": "rm -rf ../assets/css; rm -rf ../assets/js; npm run build-js; npm run build-css"
+  },
+  "devDependencies": {
+    "browserify": "^14.3.0",
+    "node-sass": "^4.5.2"
+  },
+  "dependencies": {
+    "rand-password-gen": "^2.0.0",
+    "reset-css": "^2.2.0"
+  }
+}
