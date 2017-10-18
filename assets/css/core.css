@@ -95,6 +95,18 @@ svg.icon {
 .padRt {
   padding-right: 0.5rem; }
 
+.noPadBot {
+  padding-bottom: 0 !important; }
+
+.margRt {
+  margin-right: 0.5rem; }
+
+.flex-grid {
+  display: flex; }
+
+.col {
+  flex: 1; }
+
 button, .btn {
   display: inline-block;
   border: none;
@@ -220,3 +232,15 @@ section#EditNewPassword {
 
 .iconEye {
   cursor: pointer; }
+
+.pwGenerator {
+  background-color: #f3f5f9; }
+
+.generatedPw, .excludedChars {
+  width: 100%; }
+
+.pwGenFields input[type=number] {
+  width: 50px; }
+
+.pwGenFields input[type=checkbox] {
+  margin-left: 0; }

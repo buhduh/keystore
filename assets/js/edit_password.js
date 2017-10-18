@@ -170,8 +170,158 @@ module.exports = function(charFirst, charLast) {
 };
 
 },{}],4:[function(require,module,exports){
+module.exports = require('./src/js/collapsible');
+
+},{"./src/js/collapsible":5}],5:[function(require,module,exports){
+'use-strict';
+var COLLAPSED_STATE = 'collapsed';
+var EXPANDED_STATE = 'expanded';
+
+var Collapsible = function(targetElem, triggerElem, initState) {
+    this.state = initState || COLLAPSED_STATE;
+    this.targetElem = targetElem;
+    this.triggerElem = triggerElem;
+    this.isExpanding = false;
+    this.isCollapsing = false;
+};
+
+Collapsible.prototype = {
+    init: function() {
+        this.initState();
+        this.bindUi();
+    },
+    initState: function() {
+        this.height = this.getHeight();
+        if (this.state === COLLAPSED_STATE) {
+            this.targetElem.classList.remove('expanded');
+            this.targetElem.classList.add('collapsed');
+            this.triggerElem.classList.remove('expanded');
+            this.triggerElem.classList.add('collapsed');
+            this.setHeight(0);
+        } else {
+            this.targetElem.classList.remove('collapsed');
+            this.targetElem.classList.add('expanded');
+            this.triggerElem.classList.remove('collapsed');
+            this.triggerElem.classList.add('expanded');
+            this.setHeight(this.height);
+        }
+    },
+    setHeight: function(height) {
+        this.targetElem.style.height = height + 'px';
+    },
+    getHeight: function() {
+        return this.targetElem.clientHeight;
+    },
+    bindUi: function() {
+        this.triggerElem.addEventListener('click', function(e) {
+            this.toggle();
+        }.bind(this));
+        var expandingComplete = function() {
+            this.targetElem.classList.remove('expanding');
+            this.targetElem.classList.add('expanded');
+            this.triggerElem.classList.remove('expanding');
+            this.triggerElem.classList.add('expanded');
+            this.targetElem.removeAttribute('style');
+            this.isExpanding = false;
+            this.isCollapsing = false;
+        }.bind(this);
+        var collapsingComplete = function() {
+            this.targetElem.classList.remove('collapsing');
+            this.targetElem.classList.add('collapsed');
+            this.triggerElem.classList.remove('collapsing');
+            this.triggerElem.classList.add('collapsed');
+            this.isCollapsing = false;
+            this.isExpanding = false;
+        }.bind(this);
+        regTransEndEvent(this.targetElem, function() {
+            if (this.state === EXPANDED_STATE) {
+                expandingComplete();
+            } else if (this.state === COLLAPSED_STATE) {
+                collapsingComplete();
+            }
+        }.bind(this));
+    },
+    show: function() {
+        if (!this.isCollapsing && !this.isExpanding) {
+            this.isExpanding = true;
+            this.setHeight(this.height);
+            this.targetElem.classList.remove('collapsed');
+            this.targetElem.classList.add('expanding');
+            this.triggerElem.classList.remove('collapsed');
+            this.triggerElem.classList.add('expanding');
+            this.state = EXPANDED_STATE;
+        }
+    },
+    hide: function() {
+        if (!this.isCollapsing && !this.isExpanding) {
+            this.isCollapsing = true;
+            this.setHeight(this.height);
+            var timer;
+            window.clearTimeout(timer);
+            timer = window.setTimeout(function() {
+                this.setHeight(0);
+            }.bind(this), 10);
+            this.targetElem.classList.remove('expanded');
+            this.targetElem.classList.add('collapsing');
+            this.triggerElem.classList.remove('expanded');
+            this.triggerElem.classList.add('collapsing');
+            this.state = COLLAPSED_STATE;
+        }
+    },
+    toggle: function() {
+        this.state === EXPANDED_STATE ? this.hide() : this.show();
+    }
+};
+
+function regTransEndEvent(elems, callback) {
+    var transitions = {
+        'WebkitTransition': 'webkitTransitionEnd',
+        'MozTransition': 'transitionend',
+        'MSTransition': 'msTransitionEnd',
+        'OTransition': 'oTransitionEnd',
+        'transition': 'transitionend'
+    };
+    if (elems.constructor === Array) {
+        for (var t in transitions) {
+            for (var i = 0; i < elems.length; i++) {
+                if (elems[i].style[t] !== undefined) {
+                    elems[i].addEventListener(transitions[t], function(e) {
+                        callback();
+                    }, false);
+                }
+            }
+        }
+    } else {
+        for (var t in transitions) {
+            if (elems.style[t] !== undefined) {
+                elems.addEventListener(transitions[t], function(e) {
+                    callback();
+                }, false);
+            }
+        }
+    }
+};
+
+module.exports = Collapsible;
+
+},{}],6:[function(require,module,exports){
 var pw = require('rand-password-gen'),
-  pwField = document.getElementsByClassName('password');
+  Collapsible = require('./collapsible'),
+  pwField = document.getElementsByClassName('password'),
+  generatedPwField = document.querySelectorAll('[name=generatedPw]'),
+  generatePwBtn = document.getElementsByClassName('generatePw'),
+  acceptPwBtn = document.getElementsByClassName('acceptPw'),
+  pwLengthField = document.querySelectorAll('[name=pwLength]'),
+  pwSpecialCheck = document.querySelectorAll('[name=pwSpecial]'),
+  pwSpecialField = document.querySelectorAll('[name=pwSpecialCharNum]'),
+  pwNumCheck = document.querySelectorAll('[name=pwNum]'),
+  pwNumField = document.querySelectorAll('[name=pwNumCharNum]'),
+  pwUppercase = document.querySelectorAll('[name=pwUppercase]'),
+  pwUppercaseCharNum = document.querySelectorAll('[name=pwUppercaseCharNum]'),
+  pwLowercase = document.querySelectorAll('[name=pwLowercase]'),
+  pwLowercaseCharNum = document.querySelectorAll('[name=pwLowercaseCharNum]'),
+  excludedCharsField = document.getElementsByClassName('excludedChars'),
+  firstPwGenOpened = false;
 
 function initPasswordViewToggle() {
   var iconEye = document.getElementsByClassName('iconEye');
@@ -181,7 +331,92 @@ function initPasswordViewToggle() {
 }
 
 function initPasswordGen() {
+  var targetElems = document.getElementsByClassName('collapsibleTarget'),
+    triggerElems = document.getElementsByClassName('collapsibleTrigger'),
+    pwGenTarget = document.getElementsByClassName('pwGenTarget');
 
+  pwGenTarget[0].addEventListener('click', function(event) {
+    event.preventDefault();
+    if (!firstPwGenOpened) {
+      firstPwGenOpened = true;
+      generatePw();
+    }
+  });
+
+  generatePwBtn[0].addEventListener('click', function(event) {
+    event.preventDefault();
+    generatePw();
+  });
+
+  acceptPwBtn[0].addEventListener('click', function(event) {
+    event.preventDefault();
+    pwField[0].value = generatedPwField[0].value;
+  });
+
+  for (var i = 0; i < targetElems.length; i++) {
+    new Collapsible(targetElems[i], triggerElems[i], 'collapsed').init();
+  }
+}
+
+function generatePw() {
+  var optsObj = getPwOptionsObj();
+  passwordStr = pw(optsObj);
+  generatedPwField[0].value = passwordStr;
+}
+
+function getPwOptionsObj() {
+  var optsObj = {},
+    inclusionRules = [];
+
+  var length = parseInt(pwLengthField[0].value),
+    incSpecialChars = pwSpecialCheck[0].checked,
+    specialCharsCount = parseInt(pwSpecialField[0].value),
+    incNumChars = pwNumCheck[0].checked,
+    numCharsCount = parseInt(pwNumField[0].value),
+    incUppercase = pwUppercase[0].checked,
+    uppercaseCharsCount = parseInt(pwUppercaseCharNum[0].value),
+    incLowercase = pwLowercase[0].checked,
+    lowercaseCharsCount = parseInt(pwLowercaseCharNum[0].value);
+
+  if (length > 0) {
+    optsObj = Object.assign(optsObj, {length: length});
+  }
+
+  if (incSpecialChars && specialCharsCount > 0) {
+    inclusionRules.push({minNumChars: specialCharsCount, charSet: 'SPECIAL_CHAR'});
+  }
+
+  if (incNumChars && numCharsCount > 0) {
+    inclusionRules.push({minNumChars: numCharsCount, charSet: 'DIGIT'});
+  }
+
+  if (incUppercase && uppercaseCharsCount > 0) {
+    inclusionRules.push({minNumChars: uppercaseCharsCount, charSet: 'UPPERCASE'});
+  }
+
+  if (incLowercase && lowercaseCharsCount > 0) {
+    inclusionRules.push({minNumChars: lowercaseCharsCount, charSet: 'LOWERCASE'});
+  }
+
+  if (inclusionRules.length) {
+    optsObj = Object.assign(optsObj, {inclusionRules: inclusionRules});
+  }
+
+  var excludedChars = excludedCharsField[0].value;
+  var excludedCharsArr = [];
+  if (excludedChars.length > 0) {
+    // first remove out all space characters
+    excludedChars = excludedChars.replace(/\s/g, '');
+    // check if string is comma separated characters
+    if (/^(.,)+[^, ]$/.test(excludedChars)) {
+      excludedCharsArr = excludedChars.split(',');
+      optsObj = Object.assign(optsObj, {exclusions: excludedCharsArr});
+    } else {
+      console.error('malformed comma separated excluded characters');
+    }
+  }
+
+  return optsObj;
 }
 
 function init() {
@@ -199,4 +434,4 @@ function ready(fn) {
 
 ready(init);
 
-},{"rand-password-gen":1}]},{},[4]);
+},{"./collapsible":4,"rand-password-gen":1}]},{},[6]);
