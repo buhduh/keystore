@@ -26,6 +26,7 @@ type IPasswordModel interface {
 	GetPasswordsForUserID(int64) ([]*Password, error)
 	AddPassword(*Password) error
 	UpdatePassword(*Password) error
+	DeletePasswordByID(int64) error
 }
 
 type PasswordModel struct{}
@@ -62,6 +63,31 @@ func NewPassword(
 
 func NewPasswordModel() *PasswordModel {
 	return new(PasswordModel)
+}
+
+func (p *PasswordModel) DeletePasswordByID(pID int64) error {
+	err := safelyConnect()
+	if err != nil {
+		return err
+	}
+	stmt, err := connection.Prepare(`
+		delete from passwords where id=?
+	`)
+	if err != nil {
+		return err
+	}
+	res, err := stmt.Exec(pID)
+	if err != nil {
+		return err
+	}
+	numAff, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if numAff != 1 {
+		return fmt.Errorf("Did not delete one row.")
+	}
+	return nil
 }
 
 //joins on category_id, make sure this value is correct when calling,

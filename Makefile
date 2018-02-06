@@ -1,6 +1,6 @@
 export VERSION
 
-local: test config.json
+local: test config.json front-end
 	@if [ ! -z $$(pgrep keystore) ]; then \
 	  echo "killing running process" ;\
 	  kill $$(pgrep keystore) ;\
@@ -17,11 +17,22 @@ config.json:
 test:
 	go test -v keystore/...
 
+#TODO this npm/node stuff should probably be done better
+#only build stale files etc
+front-end:
+	$(MAKE) -C web $@
+
 deploy: test build config.production.json infrastructure
 	test -n "$(VERSION)" # $$VERSION
 	$(MAKE) -C infrastructure $@
 
-build:
+js:
+	$(MAKE) -C web $@
+
+css:
+	$(MAKE) -C web $@
+
+build: front-end
 	go-bindata data/
 	go build -o bin/keystore -ldflags="-s -w"
 
