@@ -8,3 +8,4 @@ infrastructure
 bin
 bindata.go
 node_modules/
+web/package-lock.json

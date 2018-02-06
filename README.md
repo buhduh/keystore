@@ -23,5 +23,4 @@ If everything is set up, the keystore can be navigated to by going to http://loc
 
 Plans:
 -------------
-1.  More intelligent mysql account creation, detection so root with no password isn't used.
-2.  makefile for builds, tests, and deployments
+1. Update README for proper installation instructions with make.
