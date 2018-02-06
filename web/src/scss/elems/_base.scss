@@ -54,3 +54,17 @@ svg {
 .padRt {
   padding-right:0.5rem;
 }
+.noPadBot {
+  padding-bottom: 0 !important;
+}
+
+.margRt {
+  margin-right: 0.5rem;
+}
+
+.flex-grid {
+  display: flex;
+}
+.col {
+  flex: 1;
+}
