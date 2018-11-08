@@ -3,11 +3,10 @@ package main
 import (
 	"encoding/json"
 	//"fmt"
-	"net/http"
-	"strconv"
-
 	"keystore/models"
 	"keystore/session"
+	"net/http"
+	"strconv"
 )
 
 func getAjaxEndpoint(
@@ -77,27 +76,6 @@ func getAjaxEndpoint(
 			}
 			out := map[string]string{
 				"data": pStr,
-			}
-			outStr, err := json.Marshal(out)
-			if err != nil {
-				http.Error(w, "Bad Request.", 400)
-				return
-			}
-			w.Write(outStr)
-			return
-		case "delete":
-			pID, err := strconv.ParseInt(data["password_id"], 10, 64)
-			if err != nil {
-				http.Error(w, "Bad Request.", 400)
-				return
-			}
-			err = pModel.DeletePasswordByID(pID)
-			if err != nil {
-				http.Error(w, "Bad Request.", 400)
-				return
-			}
-			out := map[string]string{
-				"data": "success",
 			}
 			outStr, err := json.Marshal(out)
 			if err != nil {

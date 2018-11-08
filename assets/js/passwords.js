@@ -165,27 +165,9 @@ function copyPw(token) {
   req.send("payload="+encodeURIComponent(token));
 }
 
-function deletePw(token, domain) {
-  if(!confirm("Are you sure you wish to delete domain: '" + domain + "'.")) {
-    return;
-  }
-  var req = new XMLHttpRequest();
-  req.onreadystatechange = function() {
-    if (req.readyState === XMLHttpRequest.DONE) {
-      if (req.status === 200) {
-        var data = JSON.parse(req.responseText)
-        if (!data.data) {
-          return
-        }
-        location.reload();
-      } else {
-        alert('There was a problem with the request.');
-      }
-    }
-  }
-  req.open("POST", AJAX_EP);
-  req.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
-  req.send("payload="+encodeURIComponent(token));
+function deletePw(token) {
+  console.log("not implemented");
+  console.log("token: " + token);
 }
 
 function removeClass(el, className) {
@@ -217,8 +199,7 @@ function initActions() {
 
   for (var i = 0; i < deleteBtns.length; i++) {
     deleteBtns[i].addEventListener('click', function() {
-        var domain = this.parentElement.parentElement.children[0].innerText;
-        deletePw(this.dataset.deleteToken, domain);
+        deletePw(this.dataset.deleteToken);
     }, false);
   }
 }
